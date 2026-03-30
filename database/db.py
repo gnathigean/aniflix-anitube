@@ -15,6 +15,9 @@ if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql
 engine_args = {"echo": False}
 if "sqlite" in DATABASE_URL:
     engine_args["connect_args"] = {"timeout": 30}
+else:
+    # Essencial para Supabase/PgBouncer (Transaction Pooler)
+    engine_args["statement_cache_size"] = 0
 
 engine = create_async_engine(DATABASE_URL, **engine_args)
 
