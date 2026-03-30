@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Assitindo: {{ episodio.numero }} — {{ anime.titulo if anime else 'Aniflix' }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link href="https://vjs.zencdn.net/8.5.2/video-js.css" rel="stylesheet" />
+<style>
+:root {
+    --netflix-red: #E50914;
+    --bg-black: #0a0a0a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+    background-color: var(--bg-black); color: white; 
+    font-family: 'Inter', sans-serif; overflow-x: hidden;
+    min-height: 100vh; display: flex; flex-direction: column;
+}
+
+/* Background Blur Ambient */
+.ambient-bg {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url('{{ anime.url_capa if anime else '' }}');
+    background-size: cover; background-position: center;
+    filter: blur(80px) brightness(0.3); z-index: -1; opacity: 0.6;
+}
+
+header {
+    height: 70px; display: flex; align-items: center; padding: 0 4%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    z-index: 100;
+}
+header a { color: #a3a3a3; text-decoration: none; font-size: 0.9rem; font-weight: 600; transition: 0.2s; }
+header a:hover { color: white; }
+header .sep { margin: 0 10px; color: #444; }
+
+.player-main {
+    flex: 1; display: flex; flex-direction: column; align-items: center; padding: 20px 4% 60px;
+}
+
+.video-container {
+    width: 100%; max-width: 1280px; aspect-ratio: 16/9;
+    background: black; border-radius: 8px; overflow: hidden;
+    box-shadow: 0 30px 100px rgba(0,0,0,0.9); border: 1px solid rgba(255,255,255,0.05);
+    position: relative;  /* necessário para o overlay de loading absoluto */
+}
+
+.info-bar {
+    width: 100%; max-width: 1280px; margin-top: 24px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+}
+.info-bar h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 5px; }
+.info-bar p { color: #aaa; font-size: 1rem; }
+
+.stats { display: flex; gap: 20px; color: #666; font-size: 0.85rem; margin-top: 10px; }
+.stats span b { color: var(--netflix-red); }
+
+/* Next Up */
+.up-next { width: 100%; max-width: 1280px; margin-top: 60px; }
+.up-next h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; opacity: 0.6; }
+.ep-grid { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 20px; scrollbar-width: none; }
+.ep-card {
+    min-width: 200px; background: #181818; border-radius: 4px; overflow: hidden;
+    text-decoration: none; color: white; border: 1px solid transparent; transition: 0.2s;
+}
+.ep-card:hover { border-color: rgba(255,255,255,0.3); background: #222; }
+.ep-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; opacity: 0.6; }
+.ep-card .ep-body { padding: 10px; }
+.ep-card .ep-title { font-size: 0.85rem; font-weight: 600; }
+
+/* VideoJS Customization - Netflix Skin */
+.video-js { font-family: 'Inter', sans-serif; color: white; }
+.vjs-control-bar { 
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent) !important; 
+    height: 100px !important; align-items: flex-end !important; padding-bottom: 20px !important;
+}
+.vjs-big-play-centered .vjs-big-play-button { 
+    background-color: transparent !important; border: 3px solid white !important;
+    border-radius: 50% !important; width: 100px !important; height: 100px !important;
+    line-height: 94px !important; margin-top: -50px !important; margin-left: -50px !important;
+    font-size: 3em !important;
+}
+.vjs-slider { background-color: rgba(255,255,255,0.3) !important; }
+.vjs-play-progress { background-color: var(--netflix-red) !important; }
+
+/* Player Overlay Info */
+.player-overlay-info {
+    position: absolute; top: 0; left: 0; width: 100%; padding: 40px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+    display: flex; justify-content: space-between; align-items: flex-start;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 10;
+}
+.video-container:hover .player-overlay-info { opacity: 1; }
+.top-info h2 { font-size: 2.2rem; font-weight: 900; margin-bottom: 5px; }
+.top-info p { font-size: 1.1rem; color: #ccc; }
+
+.btn-episodes-toggle {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.5);
+    color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer;
+    font-weight: 700; display: flex; align-items: center; gap: 10px;
+    pointer-events: auto; transition: 0.2s;
+}
+.btn-episodes-toggle:hover { background: rgba(255,255,255,0.2); }
+
+/* Episodes Drawer */
+.episodes-drawer {
+    position: fixed; top: 0; right: 0; width: 400px; height: 100%;
+    background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(20px);
+    z-index: 2000; padding: 30px; transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+}
+.episodes-drawer.open { transform: translateX(0); }
+
+.drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.drawer-header h3 { font-size: 1.5rem; font-weight: 800; }
+.close-drawer { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
+.season-selector-wrapper { margin-bottom: 20px; }
+#season-selector {
+    width: 100%; background: #222; color: white; border: 1px solid #444;
+    padding: 12px; border-radius: 4px; font-weight: 700; font-size: 1rem; outline: none;
+}
+
+.episodes-list-container { flex: 1; overflow-y: auto; padding-right: 10px; }
+.season-content { display: none; }
+.season-content.active { display: block; }
+
+.ep-item {
+    display: flex; align-items: center; gap: 15px; padding: 15px;
+    border-radius: 6px; cursor: pointer; transition: 0.2s; margin-bottom: 8px;
+    border: 1px solid transparent;
+}
+.ep-item:hover { background: rgba(255,255,255,0.05); }
+.ep-item.current { background: rgba(229, 9, 20, 0.1); border-color: var(--netflix-red); }
+
+.ep-number { font-size: 1.5rem; font-weight: 900; color: #444; min-width: 30px; }
+.ep-item.current .ep-number { color: var(--netflix-red); }
+.ep-info { flex: 1; }
+.ep-name { font-size: 0.95rem; font-weight: 700; margin-bottom: 3px; }
+.ep-meta { font-size: 0.75rem; color: #888; }
+.now-playing { font-size: 0.65rem; font-weight: 900; color: var(--netflix-red); letter-spacing: 1px; }
+
+/* Custom Scrollbar for Drawer */
+.episodes-list-container::-webkit-scrollbar { width: 4px; }
+.episodes-list-container::-webkit-scrollbar-track { background: transparent; }
+.episodes-list-container::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+
+/* ════════════════════════════════════════════
+   PLAYER MOBILE — NETFLIX APP EXPERIENCE
+   Vídeo no topo, info abaixo, sem espaço vazio
+════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    /* Remove ambient, body flex direto */
+    .ambient-bg { display: none; }
+    body { background: #000; }
+
+    /* Header compacto */
+    header {
+        height: 44px;
+        padding: 0 12px;
+        background: rgba(0,0,0,0.9);
+        position: fixed; top: 0; left: 0; width: 100%; z-index: 100;
+    }
+    header a { font-size: 0.85rem; }
+
+    /* Main: coluna, sem padding, começa logo após o header */
+    .player-main {
+        padding: 44px 0 0 0;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    /* Vídeo: largura total, proporção 16:9 */
+    .video-container {
+        width: 100%;
+        max-width: 100%;
+        aspect-ratio: 16/9;
+        border-radius: 0;
+        box-shadow: none;
+        border: none;
+    }
+
+    /* Overlay info: sempre visível um pouco no mobile */
+    .player-overlay-info {
+        padding: 10px 12px;
+        opacity: 1;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+        pointer-events: auto;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .video-container:hover .player-overlay-info { opacity: 1; }
+    .top-info h2 { font-size: 0.95rem; }
+    .top-info p { font-size: 0.78rem; }
+    .btn-episodes-toggle {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+        gap: 5px;
+    }
+    .btn-episodes-toggle svg { width: 18px; height: 18px; }
+
+    /* Controles Video.js compactos */
+    .vjs-control-bar {
+        height: 44px !important;
+        padding-bottom: 0 !important;
+        align-items: center !important;
+    }
+    .vjs-big-play-centered .vjs-big-play-button {
+        width: 56px !important; height: 56px !important;
+        line-height: 52px !important; font-size: 1.5em !important;
+        margin-left: -28px !important; margin-top: -28px !important;
+    }
+
+    /* Info bar abaixo do vídeo — Netflix mobile style */
+    .info-bar {
+        padding: 14px 16px 8px;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 0;
+    }
+    .info-bar h1 { font-size: 1.1rem; }
+    .info-bar p { font-size: 0.85rem; }
+    .stats { gap: 12px; font-size: 0.78rem; margin-top: 6px; }
+
+    /* Up Next / Próximos Episódios: carrossel horizontal com thumbs */
+    .up-next { padding: 0 16px; margin-top: 20px; }
+    .up-next h3 { font-size: 0.95rem; }
+    .ep-card { min-width: 140px; }
+
+    /* Drawer: ocupa tela toda no mobile */
+    .episodes-drawer {
+        width: 100%;
+        padding: 20px 16px;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="ambient-bg"></div>
+
+<header>
+    <a href="/anime/{{ episodio.temporada.anime_id }}">
+        <span style="font-size: 1.5rem; vertical-align: middle;">‹</span> Back to Browse
+    </a>
+</header>
+
+<main class="player-main">
+    <div class="video-container">
+        <video id="player" class="video-js vjs-default-skin vjs-big-play-centered"
+          controls preload="none" style="width:100%;height:100%">
+          <!-- A source será injetada via JS após resolve-stream -->
+        </video>
+
+        <!-- Loading Screen On-Demand -->
+        <div id="stream-loading" style="
+            position:absolute; inset:0; background:#000;
+            display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+            gap:16px; z-index:50;
+        ">
+            <div style="width:48px;height:48px;border:3px solid #333;border-top-color:#e50914;
+                        border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+            <p id="loading-msg" style="color:#aaa;font-size:0.9rem;font-weight:600;">Preparando stream...</p>
+        </div>
+        <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+        
+        <!-- Netflix Overlay Info -->
+        <div class="player-overlay-info">
+            <div class="top-info">
+                <h2>{{ episodio.temporada.anime.titulo }}</h2>
+                <p>{{ episodio.temporada.titulo_temporada }} — Episódio {{ episodio.numero }}</p>
+            </div>
+            
+            <button class="btn-episodes-toggle" onclick="toggleEpisodes()">
+                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                Episódios
+            </button>
+        </div>
+    </div>
+
+    <!-- Episodes Drawer (Netflix Style) -->
+    <div id="episodes-drawer" class="episodes-drawer">
+        <div class="drawer-header">
+            <h3>{{ anime.titulo if anime else 'Aniflix' }}</h3>
+            <button class="close-drawer" onclick="toggleEpisodes()">✕</button>
+        </div>
+        
+        <div class="season-selector-wrapper">
+            <select id="season-selector" onchange="switchSeason(this.value)">
+                {% for t in anime.temporadas if anime %}
+                <option value="season-{{ t.id }}" {% if t.id == episodio.temporada_id %}selected{% endif %}>
+                    Temporada {{ t.numero }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="episodes-list-container">
+            {% for t in anime.temporadas if anime %}
+            <div id="season-{{ t.id }}" class="season-content {% if t.id == episodio.temporada_id %}active{% endif %}">
+                {% for ep in t.episodios %}
+                <div class="ep-item {% if ep.id == episodio.id %}current{% endif %}" onclick="location.href='/player/{{ ep.id }}'">
+                    <div class="ep-number">{{ ep.numero }}</div>
+                    <div class="ep-info">
+                    <div class="ep-name">{% if ep.titulo_episodio %}{{ ep.titulo_episodio }}{% else %}Episódio {{ ep.numero }}{% endif %}</div>
+                    <div class="ep-meta">{{ ep.idioma or 'Legendado' }}</div>
+                    </div>
+                    {% if ep.id == episodio.id %}
+                    <div class="now-playing">REPRODUZINDO</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+
+<script src="https://vjs.zencdn.net/8.5.2/video.min.js"></script>
+<script>
+const EP_ID = {{ episodio.id }};
+const START_PROGRESS = {{ progresso }};
+let viewed = false;
+let player;
+
+// Inicializa player sem source — aguarda resolve-stream
+player = videojs('player', {
+    html5: { vhs: { overrideNative: true } },
+    fluid: true,
+    playbackRates: [0.5, 1, 1.25, 1.5, 2],
+    controlBar: {
+        children: [
+            'playToggle',
+            'volumePanel',
+            'currentTimeDisplay',
+            'timeDivider',
+            'durationDisplay',
+            'progressControl',
+            'playbackRateMenuButton',
+            'subsCapsButton',
+            'audioTrackButton',
+            'fullscreenToggle',
+        ],
+    }
+});
+
+// ════════════════════════════════════════════════
+// RESOLVE STREAM ON-DEMAND
+// 1. Busca URL fresca do backend (cache 2h)
+// 2. Se OK: injeta no player e reproduz
+// 3. Se falha: mostra erro amigável
+// ════════════════════════════════════════════════
+async function resolveAndPlay() {
+    const loadingEl = document.getElementById('stream-loading');
+    const msgEl    = document.getElementById('loading-msg');
+
+    try {
+        msgEl.textContent = 'Resolvendo stream...';
+        const res = await fetch(`/api/resolve-stream/${EP_ID}`);
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+            throw new Error(data.error || `HTTP ${res.status}`);
+        }
+
+        // Detecta o tipo de mídia pela URL (MP4 vs M3U8/HLS)
+        let mediaType = 'application/x-mpegURL';
+        try {
+            // Decodifica base64url para checar a extensão
+            const b64 = data.url_b64.replace(/-/g, '+').replace(/_/g, '/');
+            const urlDecoded = decodeURIComponent(atob(b64 + '=='.slice((2 - b64.length * 3) & 3)));
+            if (/\.mp4/i.test(urlDecoded)) mediaType = 'video/mp4';
+        } catch(e) {
+            // Se falhar decodificação, mantém HLS como padrão
+        }
+
+        msgEl.textContent = data.from_cache ? '\u26a1 Cache hit!' : '\u2705 Stream resolvido!';
+
+        // Monta URL do proxy com parâmetros corretos
+        const proxyUrl = `/stream?url_b64=${encodeURIComponent(data.url_b64)}&headers_b64=${encodeURIComponent(data.headers_b64 || '')}`;
+
+        // Injeta source no Video.js com tipo correto
+        player.src({ src: proxyUrl, type: mediaType });
+
+        player.ready(() => {
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (START_PROGRESS > 5) player.currentTime(START_PROGRESS);
+            player.play().catch(() => {});
+            const currentEp = document.querySelector('.ep-item.current');
+            if (currentEp) setTimeout(() => currentEp.scrollIntoView({ behavior: 'smooth', block: 'center' }), 500);
+        });
+
+        // Erro no player: tenta re-extrair automaticamente se possível
+        player.one('error', async () => {
+            console.warn('[Player] Erro no stream, tentando re-extração...');
+            await fetch(`/api/cache/invalidate/${EP_ID}`, { method: 'POST' }).catch(() => {});
+
+            if (data.can_reextract) {
+                // Tem url_episodio_origem → re-extrai via Playwright
+                if (loadingEl) {
+                    loadingEl.style.display = 'flex';
+                    loadingEl.innerHTML = `
+                        <div style="width:48px;height:48px;border:3px solid #333;border-top-color:#e50914;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                        <p style="color:#aaa;font-size:0.9rem;font-weight:600;">Re-extraindo stream...</p>
+                        <p style="color:#555;font-size:0.75rem;">Isso pode levar até 30s</p>
+                    `;
+                }
+                try {
+                    const reRes = await fetch(`/api/reextract-stream/${EP_ID}`, { method: 'POST' });
+                    const reData = await reRes.json();
+                    if (reRes.ok && reData.url_b64) {
+                        const newProxy = `/stream?url_b64=${encodeURIComponent(reData.url_b64)}&headers_b64=${encodeURIComponent(reData.headers_b64 || '')}`;
+                        player.src({ src: newProxy, type: mediaType });
+                        player.ready(() => {
+                            if (loadingEl) loadingEl.style.display = 'none';
+                            player.play().catch(() => {});
+                        });
+                        return;
+                    }
+                } catch(e) { /* fallback para tela de erro */ }
+            }
+
+            // Sem url_episodio_origem ou re-extração falhou
+            if (loadingEl) {
+                loadingEl.style.display = 'flex';
+                const msg = data.can_reextract
+                    ? 'Re-extração falhou. O Anitube pode estar bloqueando temporariamente.'
+                    : 'A URL do CDN expirou. Este episódio precisa ser reimportado para funcionar.';
+                loadingEl.innerHTML = `
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="#e50914"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    <p style="color:#e50914;font-size:1rem;font-weight:700;">Stream Indisponível</p>
+                    <p style="color:#888;font-size:0.8rem;max-width:260px;text-align:center;">${msg}</p>
+                    <button onclick="resolveAndPlay()" style="margin-top:10px;padding:8px 20px;background:#e50914;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.9rem;">Tentar Novamente</button>
+                `;
+            }
+        });
+
+    } catch (err) {
+        console.error('[Player] Falha ao resolver stream:', err);
+        if (loadingEl) {
+            loadingEl.innerHTML = `
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="#e50914"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                <p style="color:#e50914;font-size:1rem;font-weight:700;">Stream Indisponível</p>
+                <p style="color:#888;font-size:0.8rem;max-width:260px;text-align:center;">${err.message}</p>
+                <button onclick="resolveAndPlay()" style="margin-top:10px;padding:8px 20px;background:#e50914;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.9rem;">Tentar Novamente</button>
+            `;
+        }
+    }
+}
+
+// Inicia a resolução imediatamente ao carregar a página
+resolveAndPlay();
+
+// ─── Extras ─────────────────────────────────────
+function toggleEpisodes() {
+    document.getElementById('episodes-drawer').classList.toggle('open');
+}
+
+function switchSeason(seasonId) {
+    document.querySelectorAll('.season-content').forEach(s => s.classList.remove('active'));
+    document.getElementById(seasonId).classList.add('active');
+    document.querySelector('.episodes-list-container').scrollTop = 0;
+}
+
+player.on('play', async () => {
+    if (!viewed) {
+        viewed = true;
+        await fetch(`/api/view/${EP_ID}`, {method:'POST'});
+    }
+});
+
+setInterval(async () => {
+    const cur = player.currentTime();
+    const dur = player.duration();
+    if (cur > 10 && dur > 0) {
+        await fetch(`/api/progresso/${EP_ID}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({segundos: cur, duracao: dur})
+        });
+    }
+}, 10000);
+</script>
+</body>
+</html>

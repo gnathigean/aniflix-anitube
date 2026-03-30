@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ anime.titulo }} — Aniflix</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#E50914">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+    --netflix-red: #E50914;
+    --bg-black: #141414;
+    --card-bg: #181818;
+    --text-white: #FFFFFF;
+    --text-muted: #B3B3B3;
+    --border: rgba(255,255,255,0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+    background-color: var(--bg-black); color: var(--text-white); 
+    font-family: 'Inter', sans-serif; overflow-x: hidden;
+}
+
+/* Header Netflix Style */
+header {
+    position: fixed;
+    top: 0; width: 100%; height: 68px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 4%;
+    z-index: 1000;
+    transition: background-color 0.5s;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+}
+header.scrolled { background-color: var(--bg-black); }
+
+.logo { 
+    font-size: 1.8rem; font-weight: 900; color: var(--netflix-red); 
+    text-decoration: none; letter-spacing: -1.5px;
+}
+
+nav { display: flex; align-items: center; gap: 20px; }
+nav a { 
+    color: var(--text-white); text-decoration: none; font-size: 0.85rem; 
+    font-weight: 500; transition: color 0.3s;
+}
+nav a:hover { color: var(--text-muted); }
+
+.back-btn {
+    display: flex; align-items: center; gap: 10px; color: white; text-decoration: none;
+    font-weight: 700; font-size: 0.9rem; transition: 0.2s;
+}
+.back-btn:hover { color: var(--text-muted); }
+
+/* Backdrop */
+.backdrop {
+    position: absolute; top: 0; left: 0; width: 100%; height: 70vh;
+    background-size: cover; background-position: top center; z-index: -1;
+}
+.backdrop::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 101%;
+    background: linear-gradient(to top, var(--bg-black) 10%, rgba(20,20,20,0.5) 50%, transparent 100%);
+}
+
+.content-wrapper { padding: 25vh 4% 100px; max-width: 1400px; margin: 0 auto; }
+
+.anime-header { max-width: 800px; }
+.anime-header h1 { font-size: 3.5rem; font-weight: 900; margin-bottom: 15px; }
+.meta { display: flex; align-items: center; gap: 15px; color: #a3a3a3; font-size: 1rem; margin-bottom: 20px; font-weight: 600; }
+.meta span.year { color: #fff; }
+.meta span.rating { border: 1px solid #a3a3a3; padding: 1px 6px; font-size: 0.8rem; border-radius: 2px; }
+
+.sinopse { font-size: 1.1rem; line-height: 1.5; color: #e5e5e5; margin-bottom: 30px; max-width: 700px; }
+
+/* Tabs / Audio Selector */
+.audio-selector { display: flex; gap: 20px; border-bottom: 2px solid #333; margin-bottom: 30px; }
+.audio-btn { 
+    background: none; border: none; color: var(--text-muted); font-size: 1.2rem; 
+    font-weight: 700; padding: 10px 0; cursor: pointer; transition: 0.2s;
+    position: relative;
+}
+.audio-btn.active { color: white; }
+.audio-btn.active::after {
+    content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background: var(--netflix-red);
+}
+
+/* Bottom Nav Mobile (Netflix Style) */
+.bottom-nav {
+    display: none; position: fixed; bottom: 0; left: 0; width: 100%;
+    background: rgba(20,20,20,0.95); backdrop-filter: blur(20px);
+    z-index: 1000; height: 60px; align-items: center; justify-content: space-around;
+    border-top: 1px solid rgba(255,255,255,0.1); padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-item { 
+    display: flex; flex-direction: column; align-items: center; gap: 4px; 
+    color: var(--text-muted); text-decoration: none; font-size: 0.65rem; font-weight: 500;
+}
+.nav-item i { font-size: 1.4rem; }
+.nav-item.active { color: white; }
+
+/* Episodes Grid */
+.ep-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.ep-card {
+    background: #2f2f2f; border-radius: 4px; overflow: hidden; text-decoration: none; color: white;
+    transition: 0.2s; position: relative;
+}
+.ep-card:hover { background: #3f3f3f; transform: scale(1.02); }
+.ep-thumb { width: 100%; aspect-ratio: 16/9; background: #222; position: relative; }
+.ep-thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+.ep-thumb .play-icon {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 48px; height: 48px; border: 2px solid white; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.2s;
+}
+.ep-card:hover .play-icon { opacity: 1; background: rgba(0,0,0,0.5); }
+
+.ep-body { padding: 12px; }
+.ep-body .ep-num { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
+.ep-body .ep-title { font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.hidden { display: none !important; }
+
+@media (max-width: 768px) {
+    header { height: 50px; padding: 0 16px; }
+    .logo { font-size: 1.3rem; }
+    
+    .backdrop { height: 55vh; }
+    .content-wrapper { padding: 40vh 16px 40px; }
+    
+    .anime-header h1 { font-size: 2rem; margin-bottom: 10px; }
+    .meta { flex-wrap: wrap; gap: 8px; font-size: 0.85rem; }
+    .sinopse { font-size: 0.95rem; margin-bottom: 20px; }
+    
+    /* Botões Play / Minha Lista lado a lado */
+    .action-btns {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+    .action-btns a, .action-btns button {
+        flex: 1;
+        justify-content: center;
+        padding: 10px 0;
+        font-size: 0.95rem;
+    }
+    
+    /* Seletor de áudio: tab bar estilo netflix */
+    .audio-selector { gap: 20px; }
+    .audio-btn { font-size: 1rem; padding: 8px 0; }
+    
+    /* Remove Menu Superior no Mobile */
+    #main-nav { display: none; }
+    header > div { gap: 15px !important; }
+    .back-btn span { font-size: 0.8rem; }
+    
+    .bottom-nav { display: flex; }
+}
+
+</style>
+</head>
+<body>
+
+<header id="main-header">
+    <div style="display: flex; align-items: center; gap: 40px;">
+        <a href="/" class="back-btn">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            <span>Voltar</span>
+        </a>
+        <a href="/" class="logo">ANIFLIX</a>
+        <nav id="main-nav">
+            <a href="/">Início</a>
+            <a href="/?categoria=animes">Animes</a>
+            <a href="/?categoria=filmes">Filmes</a>
+            <a href="/?categoria=bombando">Bombando</a>
+            <a href="/?categoria=favoritos">Minha Lista</a>
+        </nav>
+    </div>
+</header>
+
+<div class="backdrop" style="background-image: url('{{ anime.url_capa }}')"></div>
+
+<div class="content-wrapper">
+    <div class="anime-header">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <span style="background:#e50914; color:white; font-size:0.6rem; font-weight:900; padding:2px 4px; border-radius:2px;">A</span>
+            <span style="font-size:0.7rem; font-weight:700; letter-spacing:3px; color:#aaa; text-transform:uppercase;">Série Aniflix</span>
+        </div>
+        <h1>{{ anime.titulo }}</h1>
+        <div class="meta">
+            <span class="year" style="color:#46d369;">98% Relevante</span>
+            <span class="year">{{ anime.ano or '2024' }}</span>
+            <span class="rating">A14</span>
+            <span style="color:#fff;">{{ anime.temporadas|length }} Temporadas</span>
+            <span style="border:1px solid #666; padding:0 4px; font-size:0.7rem;">HD</span>
+        </div>
+        <p class="sinopse">{{ anime.sinopse or 'Descrição indisponível.' }}</p>
+    </div>
+
+    <div class="audio-selector" style="border:none; gap:40px; margin-bottom:20px;">
+        <button class="audio-btn active" id="btn-leg" onclick="setAudio('Legendado')">Legendado</button>
+        <button class="audio-btn" id="btn-dub" onclick="setAudio('Dublado')">Dublado</button>
+    </div>
+
+    {% for temporada in anime.temporadas %}
+    <div class="season-section" id="season-{{ temporada.id }}">
+        <div class="ep-list">
+            {% for ep in temporada.episodios %}
+            <a href="/player/{{ ep.id }}" class="ep-card ep-item" data-idioma="{{ ep.idioma }}">
+                <div class="ep-thumb">
+                    <img src="{{ anime.url_capa }}" alt="Thumbnail">
+                    <div class="play-icon">▶</div>
+                </div>
+                <div class="ep-body">
+                    <div class="ep-num">Episódio {{ ep.numero }}</div>
+                    <div class="ep-title">{{ ep.titulo_episodio or 'Sem título' }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function setAudio(idioma) {
+    document.getElementById('btn-leg').classList.toggle('active', idioma === 'Legendado');
+    document.getElementById('btn-dub').classList.toggle('active', idioma === 'Dublado');
+
+    const items = document.querySelectorAll('.ep-item');
+    items.forEach(it => {
+        if(it.dataset.idioma === idioma) it.classList.remove('hidden');
+        else it.classList.add('hidden');
+    });
+
+    // Ocultar seções vazias
+    document.querySelectorAll('.season-section').forEach(sec => {
+        const visible = sec.querySelectorAll('.ep-item:not(.hidden)').length;
+        if(visible === 0) sec.classList.add('hidden');
+        else sec.classList.remove('hidden');
+    });
+}
+
+// Inicializar
+window.onload = () => {
+    const hasLeg = !!document.querySelector('.ep-item[data-idioma="Legendado"]');
+    const hasDub = !!document.querySelector('.ep-item[data-idioma="Dublado"]');
+    if(!hasLeg && hasDub) setAudio('Dublado');
+    else setAudio('Legendado');
+};
+</script>
+<!-- Bottom Nav Mobile -->
+<div class="bottom-nav">
+    <a href="/" class="nav-item">
+        <i class="ph-fill ph-house"></i>
+        <span>Início</span>
+    </a>
+    <a href="/?categoria=animes" class="nav-item">
+        <i class="ph ph-television"></i>
+        <span>Animes</span>
+    </a>
+    <a href="/?categoria=filmes" class="nav-item">
+        <i class="ph ph-clapperboard-play"></i>
+        <span>Filmes</span>
+    </a>
+    <a href="/?categoria=bombando" class="nav-item">
+        <i class="ph ph-fire"></i>
+        <span>Bombando</span>
+    </a>
+    <a href="/?categoria=favoritos" class="nav-item">
+        <i class="ph ph-smiley-wink"></i>
+        <span>Minha Lista</span>
+    </a>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/fill/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/regular/style.css">
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('SW registrado!', reg);
+    }).catch(err => {
+      console.log('SW falhou!', err);
+    });
+  });
+}
+</script>
+</body>
+</html>

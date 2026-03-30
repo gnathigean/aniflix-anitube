@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.log
+*.pid
+import_status.json
+.DS_Store
+.env

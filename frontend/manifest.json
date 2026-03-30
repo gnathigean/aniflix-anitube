@@ -1,0 +1,21 @@
+{
+  "name": "Aniflix",
+  "short_name": "Aniflix",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#141414",
+  "theme_color": "#E50914",
+  "description": "Assista animes online com experiência premium.",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
