@@ -2,6 +2,11 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import event
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Carrega variáveis de ambiente do arquivo .env (especialmente DATABASE_URL)
+load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
 # Padrão: SQLite local se não houver variável de ambiente
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./animes.db")
