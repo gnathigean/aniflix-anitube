@@ -17,7 +17,8 @@ if "sqlite" in DATABASE_URL:
     engine_args["connect_args"] = {"timeout": 30}
 else:
     # Essencial para Supabase/PgBouncer (Transaction Pooler)
-    engine_args["statement_cache_size"] = 0
+    # Passamos via connect_args para o driver asyncpg
+    engine_args["connect_args"] = {"statement_cache_size": 0}
 
 engine = create_async_engine(DATABASE_URL, **engine_args)
 
