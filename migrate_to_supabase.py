@@ -53,35 +53,43 @@ async def migrate():
             
             # Criar nova instância para evitar conflito de estado da sessão
             new_anime = Anime(
-                id=anime.id, # Tentar manter o ID original
+                id=anime.id,
                 titulo=anime.titulo,
                 url_capa=anime.url_capa,
-                url_slug=anime.url_slug,
-                descricao=anime.descricao,
+                sinopse=anime.sinopse,
+                formato=anime.formato,
+                genero=anime.genero,
+                autor=anime.autor,
+                estudio=anime.estudio,
                 ano=anime.ano,
                 status=anime.status,
-                generos=anime.generos,
-                visualizacoes_total=anime.visualizacoes_total,
-                ultima_atualizacao=anime.ultima_atualizacao
+                qtd_dub=anime.qtd_dub,
+                qtd_leg=anime.qtd_leg,
+                visualizacoes_total=anime.visualizacoes_total
             )
             
             for temp in anime.temporadas:
                 new_temp = Temporada(
                     id=temp.id,
                     numero=temp.numero,
-                    titulo=temp.titulo,
+                    titulo_temporada=temp.titulo_temporada,
                     anime=new_anime
                 )
                 for ep in temp.episodios:
                     new_ep = Episodio(
                         id=ep.id,
-                        titulo=ep.titulo,
                         numero=ep.numero,
-                        url_video=ep.url_video,
-                        url_thumbnail=ep.url_thumbnail,
-                        audio_tipo=ep.audio_tipo,
-                        temporada=new_temp,
-                        data_inclusao=ep.data_inclusao
+                        titulo_episodio=ep.titulo_episodio,
+                        tipo=ep.tipo,
+                        url_episodio_origem=ep.url_episodio_origem,
+                        url_stream_original=ep.url_stream_original,
+                        headers_b64=ep.headers_b64,
+                        idioma=ep.idioma,
+                        views_total=ep.views_total,
+                        views_dia=ep.views_dia,
+                        views_semana=ep.views_semana,
+                        views_mes=ep.views_mes,
+                        temporada=new_temp
                     )
             
             remote_session.add(new_anime)

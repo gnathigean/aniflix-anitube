@@ -359,8 +359,16 @@ async function resolveAndPlay() {
 
     try {
         msgEl.textContent = 'Resolvendo stream...';
-        const res = await fetch(`/api/resolve-stream/${EP_ID}`);
-        const data = await res.json();
+        let res = await fetch(`/api/resolve-stream/${EP_ID}`);
+        let data = await res.json();
+
+        // Se o episódio não tem URL (foi limpo do banco ou é novo com erro), forçamos re-extração automática
+        if (res.status === 422 && data.error && data.error.includes("reextract")) {
+            console.warn('[Player] URL vazia no banco, forçando re-extração automática...');
+            msgEl.textContent = 'Buscando fontes originais (pode demorar)...';
+            res = await fetch(`/api/reextract-stream/${EP_ID}`, { method: 'POST' });
+            data = await res.json();
+        }
 
         if (!res.ok || data.error) {
             throw new Error(data.error || `HTTP ${res.status}`);

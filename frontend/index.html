@@ -19,7 +19,7 @@
 
 html, body {
     max-width: 100%;
-    overflow-x: clip;  /* clip vs hidden: não bloqueia scroll de elementos filhos */
+    overflow-x: clip;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { 
@@ -59,6 +59,7 @@ nav a {
     font-weight: 500; transition: color 0.3s;
 }
 nav a:hover { color: var(--text-muted); }
+nav a.active { font-weight: 700; color: white; }
 
 /* Hero Elite Section */
 .hero {
@@ -190,17 +191,7 @@ nav a:hover { color: var(--text-muted); }
     .anime-card:hover .card-overlay { opacity: 1; pointer-events: auto; }
 }
 
-/* ══════════════════════════════════════════════════
-   MOBILE NETFLIX APP — FIDELIDADE TOTAL
-   Cards verticais (pôster 2:3), hero full-screen,
-   pills de categoria, bottom nav 4 ícones
-══════════════════════════════════════════════════ */
-.mobile-bottom-nav { display: none; }
-.mobile-cat-pills { display: none; }
-
 @media (max-width: 768px) {
-
-    /* ══ RESET GLOBAL ══ */
     html, body, main { overflow-x: clip; width: 100%; max-width: 100vw; }
 
     /* Reset de tamanho em TODOS os cards no mobile */
@@ -211,7 +202,6 @@ nav a:hover { color: var(--text-muted); }
         flex-shrink: 0;
     }
 
-    /* ── HEADER ── */
     header {
         height: auto;
         flex-direction: column;
@@ -257,8 +247,7 @@ nav a:hover { color: var(--text-muted); }
     }
     .mobile-cat-pills button.active { background: #fff; color: #000; }
 
-    /* ── HERO: pôster/banner subtil mobile ── */
-    main { padding-top: 100px; }  /* compensar header fixed */
+    main { padding-top: 100px; }
     .hero {
         height: 58vw;
         min-height: 220px;
@@ -283,7 +272,6 @@ nav a:hover { color: var(--text-muted); }
     }
     .hero-content h1 { font-size: 1.6rem; margin: 0; line-height: 1.1; }
     .hero-content p { display: none; }
-    .hero-content > div:first-child { display: none; }  /* "ORIGINAL ANIFLIX" label */
 
     .hero-btns {
         display: flex;
@@ -300,10 +288,6 @@ nav a:hover { color: var(--text-muted); }
         font-size: 0.68rem; letter-spacing: 0;
     }
 
-    /* ══════════════════════════════════════════
-       CARROSSEL — Scroll horizontal real (Netflix)
-       Nunca corta cards, sem overflow lateral no body
-    ══════════════════════════════════════════ */
     .row { padding: 0; margin-top: 16px; overflow: visible; }
     .row-title { font-size: 0.95rem; font-weight: 700; padding-left: 14px; margin-bottom: 8px; display: block; }
 
@@ -313,95 +297,56 @@ nav a:hover { color: var(--text-muted); }
         flex-wrap: nowrap;
         gap: 8px;
         padding: 4px 14px 16px 14px;
-        overflow-x: scroll;   /* scroll, não auto — garante comportamento mobile */
+        overflow-x: scroll;
         overflow-y: visible;
-        -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
-        /* clip apenas vertical para não esconder cards do scroll horizontal */
-        -ms-overflow-style: none;
-        will-change: scroll-position;
     }
     .item-wrapper::-webkit-scrollbar { display: none; }
 
-    /* Cards do carrossel: 2:3 pôster, 3 visíveis por tela */
     .item-wrapper .anime-card {
         flex: 0 0 calc(33.333vw - 14px) !important;
         width: calc(33.333vw - 14px) !important;
-        min-width: calc(33.333vw - 14px) !important;
-        max-width: calc(33.333vw - 14px) !important;
         aspect-ratio: 2/3 !important;
-        border-radius: 4px !important;
-        overflow: hidden !important;
     }
-    .item-wrapper .anime-card img {
-        width: 100% !important; height: 100% !important;
-        object-fit: cover !important;
-        object-position: center top !important;
-    }
-    .item-wrapper .always-visible-title {
-        font-size: 0.6rem !important;
-        padding: 16px 3px 4px !important;
-    }
-
-    /* ══════════════════════════════════════════
-       GRID CATÁLOGO — 3 colunas fixas, sem overflow
-    ══════════════════════════════════════════ */
     .infinite-grid {
         display: grid !important;
         grid-template-columns: repeat(3, 1fr) !important;
         gap: 5px !important;
         padding: 8px 8px 90px 8px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        overflow: hidden !important;
     }
     .infinite-grid .anime-card {
         width: 100% !important;
         aspect-ratio: 2/3 !important;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-    .infinite-grid .anime-card img {
-        width: 100%; height: 100%;
-        object-fit: cover;
-        object-position: center top;
-    }
-    .always-visible-title {
-        font-size: 0.55rem !important;
-        padding: 14px 3px 4px !important;
-        font-weight: 700 !important;
     }
     .card-overlay { display: none !important; }
-    .anime-card:hover { transform: none !important; box-shadow: none !important; }
+}
 
-    /* ── BOTTOM NAV: 4 ícones ── */
-    .mobile-bottom-nav {
-        display: flex;
-        position: fixed;
-        bottom: 0; left: 0;
-        width: 100%;
-        height: 58px;
-        background-color: rgba(10,10,10,0.97);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        justify-content: space-around;
-        align-items: center;
-        z-index: 2000;
-        border-top: 1px solid rgba(255,255,255,0.06);
-    }
-    .mobile-bottom-nav a {
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        color: #888; text-decoration: none;
-        font-size: 0.6rem; gap: 3px; font-weight: 600;
-        flex: 1; height: 100%; transition: color 0.15s;
-    }
-    .mobile-bottom-nav a.active { color: #ffffff; }
-    .mobile-bottom-nav a svg {
-        width: 22px; height: 22px; fill: currentColor; display: block;
-    }
-    /* Busca: o SVG tem stroke, não fill */
-    .mobile-bottom-nav a:nth-child(2) svg { fill: none; stroke: currentColor; stroke-width: 2.5; }
+/* Bottom Nav Mobile */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 58px;
+    background-color: rgba(10,10,10,0.97);
+    backdrop-filter: blur(20px);
+    justify-content: space-around;
+    align-items: center;
+    z-index: 2000;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.mobile-bottom-nav a {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: #888; text-decoration: none;
+    font-size: 0.6rem; gap: 3px; font-weight: 600;
+    flex: 1; height: 100%; transition: color 0.15s;
+}
+.mobile-bottom-nav a.active { color: #ffffff; }
+.mobile-bottom-nav a svg { width: 22px; height: 22px; fill: currentColor; }
+
+@media (max-width: 768px) {
+    .mobile-bottom-nav { display: flex; }
 }
 </style></head>
 <body>
@@ -418,11 +363,11 @@ nav a:hover { color: var(--text-muted); }
                 <a href="#" onclick="changeCategory('favoritos', this)">Minha Lista</a>
             </nav>
         </div>
-        <div class="header-icons" style="display: flex; align-items: center; gap: 20px;">
+        <div class="header-icons">
             <div class="search-box">
                 <input type="text" id="search-input" class="search-input" placeholder="Títulos, gêneros...">
                 <span id="search-icon" class="search-icon">
-                    <svg focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="7"></circle>
                         <line x1="21" y1="21" x2="16" y2="16"></line>
                     </svg>
@@ -430,9 +375,9 @@ nav a:hover { color: var(--text-muted); }
             </div>
         </div>
     </div>
-    <!-- Pills de Categoria (Mobile Only) -->
     <div class="mobile-cat-pills" id="mobile-cat-pills">
-        <button class="active" onclick="changeCategory(null, this)">Animes</button>
+        <button class="active" onclick="changeCategory(null, this)">Início</button>
+        <button onclick="changeCategory('animes', this)">Animes</button>
         <button onclick="changeCategory('filmes', this)">Filmes</button>
         <button onclick="changeCategory('bombando', this)">Bombando</button>
         <button onclick="changeCategory('favoritos', this)">Minha Lista</button>
@@ -440,7 +385,6 @@ nav a:hover { color: var(--text-muted); }
 </header>
 
 <main>
-    <!-- Hero Aniflix -->
     {% if animes %}
     <div class="hero" style="background-image: url('{{ animes[0].url_capa }}')">
         <div class="hero-content">
@@ -450,7 +394,7 @@ nav a:hover { color: var(--text-muted); }
             </div>
             <h1>{{ animes[0].titulo }}</h1>
             <p>{{ animes[0].sinopse[:200] }}...</p>
-            <div class="hero-btns" style="display: flex; gap: 12px;">
+            <div class="hero-btns">
                 <a href="/anime/{{ animes[0].id }}" class="btn btn-play">▶ Assistir</a>
                 <a href="/anime/{{ animes[0].id }}" class="btn btn-info">ⓘ Mais Informações</a>
             </div>
@@ -458,7 +402,6 @@ nav a:hover { color: var(--text-muted); }
     </div>
     {% endif %}
 
-    <!-- Trilhos Aniflix -->
     <div class="row">
         <h2 class="row-title">Continuar Assistindo</h2>
         <div class="item-wrapper" id="row-continuar">
@@ -468,38 +411,24 @@ nav a:hover { color: var(--text-muted); }
                 <div class="card-overlay">
                     <div class="overlay-btns">
                         <button class="mini-btn play">▶</button>
-                        <button class="mini-btn">✚</button>
                     </div>
-                    <div class="overlay-meta"><span style="color:#46d369;">98% Relevante</span> <span style="border:1px solid #888; color:#ddd; padding:0 4px; font-size:0.65rem;">A14</span></div>
-                    <div class="overlay-tags"><span>EP {{ item.episodio.numero }}</span> <span>•</span> <span>{{ (item.duracao_segundos - item.progresso_segundos)|int // 60 }}m restantes</span></div>
-                    <div style="width:100%; height:3px; background:#444; margin-top:10px; border-radius:2px; overflow:hidden;">
+                    <div class="overlay-meta"><span style="color:#46d369;">98% Relevante</span></div>
+                    <div class="overlay-tags"><span>EP {{ item.episodio.numero }}</span></div>
+                    <div style="width:100%; height:3px; background:#444; margin-top:10px;">
                         <div style="width:{{ (item.progresso_segundos / item.duracao_segundos * 100)|int }}%; height:100%; background:#e50914;"></div>
                     </div>
                 </div>
             </div>
             {% endfor %}
-            {% if not continuar %}
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top:10px;">Suas obras recentes aparecerão aqui.</p>
-            {% endif %}
+            {% if not continuar %}<p style="padding-left:14px; color:#888;">Suas obras recentes aparecerão aqui.</p>{% endif %}
         </div>
     </div>
 
     <div class="row">
         <h2 class="row-title">Bombando Agora</h2>
         <div class="item-wrapper" id="row-trending">
-            {% for ep in top_dia %}
-            <div class="anime-card" onclick="location.href='/anime/{{ ep.temporada.anime.id }}'">
-                <img src="{{ ep.temporada.anime.url_capa }}" loading="lazy">
-                <div class="card-overlay">
-                    <div class="overlay-btns">
-                        <button class="mini-btn play">▶</button>
-                        <button class="mini-btn">✚</button>
-                        <button class="mini-btn" style="margin-left:auto;">▼</button>
-                    </div>
-                    <div class="overlay-meta"><span style="color:#46d369;">Top 10 Hoje</span> <span style="border:1px solid #888; color:#ddd; padding:0 4px; font-size:0.65rem;">HD</span> <span>{{ ep.temporada.anime.ano }}</span></div>
-                    <div class="overlay-tags"><span>{{ ep.temporada.anime.genero.split(',')[0] if ep.temporada.anime.genero else 'Anime' }}</span> <span>•</span> <span>Ação</span></div>
-                </div>
-            </div>
+            {% for a in top_dia_animes %}
+            <div class="anime-card" onclick="location.href='/anime/{{ a.id }}'"><img src="{{ a.url_capa }}" loading="lazy"></div>
             {% endfor %}
         </div>
     </div>
@@ -510,53 +439,36 @@ nav a:hover { color: var(--text-muted); }
             {% for a in animes %}
             <div class="anime-card" onclick="location.href='/anime/{{ a.id }}'">
                 <img src="{{ a.url_capa }}" loading="lazy">
-                <div class="always-visible-title" style="position:absolute; bottom:0; left:0; width:100%; padding:40px 10px 10px; background:linear-gradient(to top, rgba(20,20,20,1) 0%, rgba(20,20,20,0.6) 50%, transparent 100%); font-weight:700; font-size:1rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); text-align:center;">{{ a.titulo }}</div>
-                <div class="card-overlay">
-                    <div class="overlay-btns">
-                        <button class="mini-btn play">▶</button>
-                        <button class="mini-btn">✚</button>
-                        <button class="mini-btn" style="margin-left:auto;">▼</button>
-                    </div>
-                    <div class="overlay-meta">
-                        <span style="color:#46d369;">{{ a.visualizacoes_total|default(0) }} views</span> <span style="border:1px solid #888; color:#ddd; padding:0 4px; font-size:0.65rem;">A14</span> <span>{{ a.ano or '2024' }}</span>
-                    </div>
-                    <div class="overlay-tags">
-                        <span>{{ a.qtd_leg|default(0) }} Eps</span> <span>•</span> <span>{{ a.qtd_dub|default(0) }} Dublado</span>
-                    </div>
-                </div>
+                <div class="always-visible-title" style="position:absolute; bottom:0; left:0; width:100%; padding:40px 10px 10px; background:linear-gradient(to top, rgba(20,20,20,1) 0%, transparent 100%); font-weight:700; font-size:1rem; text-align:center;">{{ a.titulo }}</div>
             </div>
             {% endfor %}
         </div>
-        </div>
-        <div id="loading-trigger">
-            <div class="spinner"></div>
-        </div>
     </div>
+    <div id="loading-trigger"><div class="spinner"></div></div>
 </main>
 
-    <!-- Netflix Bottom Navigation Bar (Mobile Only) -->
-    <div class="mobile-bottom-nav" id="mobile-nav">
-        <!-- Início -->
-        <a href="#" onclick="changeCategory(null, this)" class="active">
-            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            <span>Início</span>
-        </a>
-        <!-- Busca -->
-        <a href="#" onclick="document.getElementById('search-icon').click(); return false;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16" y2="16"/></svg>
-            <span>Busca</span>
-        </a>
-        <!-- Bombando (New & Hot) -->
-        <a href="#" onclick="changeCategory('bombando', this)">
-            <svg viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></svg>
-            <span>Bombando</span>
-        </a>
-        <!-- Minha Lista -->
-        <a href="#" onclick="changeCategory('favoritos', this)">
-            <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
-            <span>Minha Lista</span>
-        </a>
-    </div>
+<div class="mobile-bottom-nav" id="mobile-nav">
+    <a href="#" onclick="changeCategory(null, this)" class="active">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Início</span>
+    </a>
+    <a href="#" onclick="changeCategory('animes', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+        <span>Animes</span>
+    </a>
+    <a href="#" onclick="changeCategory('filmes', this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/><line x1="15" y1="21" x2="15" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+        <span>Filmes</span>
+    </a>
+    <a href="#" onclick="changeCategory('bombando', this)">
+        <svg viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
+        <span>Bombando</span>
+    </a>
+    <a href="#" onclick="changeCategory('favoritos', this)">
+        <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+        <span>Minha Lista</span>
+    </a>
+</div>
 
 <script>
     let offset = {{ animes|length }};
@@ -566,157 +478,62 @@ nav a:hover { color: var(--text-muted); }
     let currentCategory = null;
     let currentQuery = "";
 
-    // Sync menu ativo entre Nav Desktop e Nav Mobile
     const syncActiveNav = (el) => {
         if (!el) return;
-        document.querySelectorAll('#main-nav a, #mobile-nav a').forEach(a => a.classList.remove('active'));
-        // Localiza a contraparte para ativar em ambos
+        document.querySelectorAll('#main-nav a, #mobile-nav a, #mobile-cat-pills button').forEach(a => a.classList.remove('active'));
         const linkTxt = el.innerText.trim();
-        document.querySelectorAll('#main-nav a, #mobile-nav a').forEach(a => {
+        document.querySelectorAll('#main-nav a, #mobile-nav a, #mobile-cat-pills button').forEach(a => {
             if(a.innerText.trim().includes(linkTxt)) a.classList.add('active');
         });
     };
 
-window.onscroll = function() {
-    const header = document.getElementById('main-header');
-    if (window.pageYOffset > 50) header.classList.add('scrolled');
-    else header.classList.remove('scrolled');
+    window.onscroll = function() {
+        const header = document.getElementById('main-header');
+        if (window.pageYOffset > 50) header.classList.add('scrolled');
+        else header.classList.remove('scrolled');
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 800) loadMoreAnimes();
+    };
 
-    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 800) {
+    function changeCategory(cat, el) {
+        if (el) syncActiveNav(el);
+        currentCategory = cat;
+        currentQuery = "";
+        resetGrid(el ? el.innerText.trim() : "Catálogo");
+    }
+
+    function resetGrid(titleText) {
+        offset = 0; hasMore = true;
+        const grid = document.getElementById('main-catalog');
+        grid.innerHTML = "";
+        grid.previousElementSibling.innerText = titleText;
+        const hero = document.querySelector('.hero');
+        if(hero) hero.style.display = (currentCategory === null) ? 'flex' : 'none';
+        document.querySelectorAll('.row').forEach((r,i) => { if(i<2) r.style.display = (currentCategory === null) ? 'block' : 'none'; });
         loadMoreAnimes();
     }
-};
 
-// Toggle Busca
-const searchIcon = document.getElementById('search-icon');
-const searchInput = document.getElementById('search-input');
-
-searchIcon.onclick = () => {
-    if (!searchInput.classList.contains('expanded')) {
-        searchInput.classList.add('expanded');
-        searchInput.focus();
-    } else if (searchInput.value) {
-        performSearch();
-    } else {
-        searchInput.classList.remove('expanded');
+    async function loadMoreAnimes() {
+        if (loading || !hasMore) return;
+        loading = true;
+        try {
+            let url = `/api/animes?offset=${offset}&limit=${limit}`;
+            if (currentCategory) url += `&categoria=${currentCategory}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            if (!data.length) { hasMore = false; document.getElementById('loading-trigger').style.display='none'; return; }
+            const grid = document.getElementById('main-catalog');
+            data.forEach(a => {
+                const card = document.createElement('div');
+                card.className = 'anime-card';
+                card.onclick = () => location.href = `/anime/${a.id}`;
+                card.innerHTML = `<img src="${a.url_capa}" loading="lazy"><div class="always-visible-title" style="position:absolute; bottom:0; left:0; width:100%; padding:40px 10px 10px; background:linear-gradient(to top, rgba(20,20,20,1) 0%, transparent 100%); font-weight:700; font-size:1rem; text-align:center;">${a.titulo}</div>`;
+                grid.appendChild(card);
+            });
+            offset += data.length;
+        } catch (e) { console.error(e); } finally { loading = false; }
     }
-};
 
-searchInput.onblur = () => {
-    if (!searchInput.value) searchInput.classList.remove('expanded');
-};
-
-searchInput.onkeyup = (e) => {
-    if (e.key === 'Enter') performSearch();
-};
-
-function performSearch() {
-    currentQuery = searchInput.value;
-    currentCategory = null;
-    resetGrid("Resultados para: " + currentQuery);
-}
-
-function changeCategory(cat, el) {
-    if (el) syncActiveNav(el);
-    currentCategory = cat;
-    currentQuery = "";
-    resetGrid(el ? el.innerText.trim().replace(/^(🏠|📺|🎬|🔥|☻)/, '') : "Catálogo");
-}
-
-function resetGrid(title) {
-    offset = 0;
-    hasMore = true;
-    document.getElementById('main-catalog').innerHTML = "";
-    document.querySelector('#main-catalog').previousElementSibling.innerText = title;
-    document.getElementById('loading-trigger').style.display = 'flex';
-    
-    // Esconde Hero se não for início
-    const hero = document.querySelector('.hero');
-    if (hero) hero.style.display = (currentCategory === null && !currentQuery) ? 'flex' : 'none';
-    const rows = document.querySelectorAll('.row');
-    rows.forEach((r, idx) => {
-        if (idx < 2) r.style.display = (currentCategory === null && !currentQuery) ? 'block' : 'none';
-    });
-
-    loadMoreAnimes();
-}
-
-async function toggleFavorite(animeId, btn, event) {
-    event.stopPropagation();
-    try {
-        const res = await fetch(`/api/favoritos/${animeId}`, { method: 'POST' });
-        const data = await res.json();
-        if (data.status === 'added') btn.classList.add('fav-active');
-        else btn.classList.remove('fav-active');
-    } catch (e) { console.error(e); }
-}
-
-async function loadMoreAnimes() {
-    if (loading || !hasMore) return;
-    loading = true;
-    
-    try {
-        let url = `/api/animes?offset=${offset}&limit=${limit}`;
-        if (currentCategory) url += `&categoria=${currentCategory}`;
-        if (currentQuery) url += `&q=${encodeURIComponent(currentQuery)}`;
-
-        const res = await fetch(url);
-        const data = await res.json();
-        
-        if (!Array.isArray(data) || data.length === 0) {
-            hasMore = false;
-            document.getElementById('loading-trigger').style.display = 'none';
-            return;
-        }
-
-        const grid = document.getElementById('main-catalog');
-        data.forEach(a => {
-            const isFav = {% if fav_ids %} {{ fav_ids|tojson }}.includes(a.id) {% else %} false {% endif %};
-            const card = document.createElement('div');
-            card.className = 'anime-card';
-            card.onclick = () => location.href = `/anime/${a.id}`;
-            card.innerHTML = `
-                <img src="${a.url_capa}" loading="lazy">
-                <div class="always-visible-title" style="position:absolute; bottom:0; left:0; width:100%; padding:40px 10px 10px; background:linear-gradient(to top, rgba(20,20,20,1) 0%, rgba(20,20,20,0.6) 50%, transparent 100%); font-weight:700; font-size:1rem; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); text-align:center;">${a.titulo}</div>
-                <div class="card-overlay">
-                    <div class="overlay-btns">
-                        <button class="mini-btn play" onclick="location.href='/anime/${a.id}'">▶</button>
-                        <button class="mini-btn ${isFav ? 'fav-active' : ''}" onclick="toggleFavorite(${a.id}, this, event)">✚</button>
-                        <button class="mini-btn" style="margin-left:auto;">▼</button>
-                    </div>
-                    <div class="overlay-meta">
-                        <span style="color:#46d369;">${a.visualizacoes_total || 0} views</span> <span style="border:1px solid #888; color:#ddd; padding:0 4px; font-size:0.65rem;">A14</span> <span>${a.ano || '2024'}</span>
-                    </div>
-                    <div class="overlay-tags">
-                        <span>${a.qtd_leg || 0} Eps</span> <span>•</span> <span>${a.qtd_dub || 0} Dublado</span>
-                    </div>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-
-        offset += data.length;
-        if (data.length < limit) {
-             hasMore = false;
-             document.getElementById('loading-trigger').style.display = 'none';
-        }
-    } catch (e) {
-        console.error("Erro ao carregar obras:", e);
-    } finally {
-        loading = false;
-    }
-}
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(reg => {
-      console.log('SW registrado!', reg);
-    }).catch(err => {
-      console.log('SW falhou!', err);
-    });
-  });
-}
+    document.addEventListener('DOMContentLoaded', () => { if (document.getElementById('main-catalog').children.length === 0) loadMoreAnimes(); });
 </script>
 </body>
 </html>

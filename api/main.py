@@ -31,12 +31,11 @@ templates.env.filters["b64encode"] = b64encode_filter
 STATUS_FILE = Path("import_status.json")
 _import_proc = None
 
-def get_session_id(request: Request, response: Response) -> str:
-    sid = request.cookies.get("session_id")
-    if not sid:
-        sid = str(uuid.uuid4())
-        response.set_cookie("session_id", sid, max_age=60*60*24*365)
-    return sid
+def get_session_id(request: Request) -> str:
+    return request.cookies.get("session_id") or str(uuid.uuid4())
+
+def set_session_cookie(response: Response, sid: str):
+    response.set_cookie("session_id", sid, max_age=60*60*24*365, httponly=True, samesite="lax")
 
 # ─── Startup ──────────────────────────────────────────────────────────────────
 
@@ -72,22 +71,41 @@ async def devtools_json():
 # ─── Páginas HTML ─────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
-    sid = get_session_id(request, response)
+async def home(request: Request, db: AsyncSession = Depends(get_db)):
+    sid = get_session_id(request)
     
     # Carregamento Inicial Otimizado (Limitado a 60)
     result = await db.execute(
-        select(Anime)
-        .order_by(desc(Anime.id))
-        .limit(60)
+        select(Anime).order_by(desc(Anime.id)).limit(60)
     )
     animes = result.scalars().all()
 
+    # Seção Bombando (Fallback se views_dia for 0)
     top_dia_r = await db.execute(
         select(Episodio).options(selectinload(Episodio.temporada).selectinload(Temporada.anime))
+        .where(Episodio.views_dia > 0)
         .order_by(desc(Episodio.views_dia)).limit(15)
     )
     top_dia = top_dia_r.scalars().all()
+    
+    if not top_dia:
+        # Fallback 1: Animes com mais views totais (coalesce para tratar nulos como 0)
+        top_dia_r = await db.execute(
+            select(Anime).order_by(desc(func.coalesce(Anime.visualizacoes_total, 0))).limit(15)
+        )
+        top_dia_animes = top_dia_r.scalars().all()
+        # Fallback 2: Se mesmo assim vazio, pega ordenado por ID (mais novos)
+        if not top_dia_animes:
+            top_dia_r = await db.execute(select(Anime).order_by(desc(Anime.id)).limit(15))
+            top_dia_animes = top_dia_r.scalars().all()
+    else:
+        # Remove duplicatas de animes nos eps que bombam
+        seen = set()
+        top_dia_animes = []
+        for ep in top_dia:
+            if ep.temporada.anime_id not in seen:
+                top_dia_animes.append(ep.temporada.anime)
+                seen.add(ep.temporada.anime_id)
 
     continuar_r = await db.execute(
         select(Progresso)
@@ -100,23 +118,24 @@ async def home(request: Request, response: Response, db: AsyncSession = Depends(
     fav_r = await db.execute(select(Favorito.anime_id).where(Favorito.session_id == sid))
     fav_ids = set(r[0] for r in fav_r.all())
 
-    return templates.TemplateResponse(request=request, name="index.html", context={
-        "animes": animes, "top_dia": top_dia, 
+    resp = templates.TemplateResponse(request=request, name="index.html", context={
+        "animes": animes, "top_dia_animes": top_dia_animes, 
         "continuar": continuar, "fav_ids": fav_ids
     })
+    set_session_cookie(resp, sid)
+    return resp
 
 # --- API Elite Catalog ---
 @app.get("/api/animes")
 async def get_animes_paginated(
+    request: Request,
     q: Optional[str] = None, 
     categoria: Optional[str] = None,
     offset: int = 0, 
     limit: int = 40, 
-    db: AsyncSession = Depends(get_db),
-    request: Request = None,
-    response: Response = None
+    db: AsyncSession = Depends(get_db)
 ):
-    sid = get_session_id(request, response)
+    sid = get_session_id(request)
     query = select(Anime)
 
     if q:
@@ -144,8 +163,8 @@ async def get_animes_paginated(
     return [{"id": a.id, "titulo": a.titulo, "url_capa": a.url_capa, "ano": a.ano, "qtd_leg": a.qtd_leg, "qtd_dub": a.qtd_dub, "visualizacoes_total": a.visualizacoes_total} for a in animes]
 
 @app.post("/api/favoritos/{anime_id}")
-async def toggle_favorito(anime_id: int, request: Request, response: Response, db: AsyncSession = Depends(get_db)):
-    sid = get_session_id(request, response)
+async def toggle_favorito(anime_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    sid = get_session_id(request)
     res = await db.execute(select(Favorito).where(Favorito.anime_id == anime_id, Favorito.session_id == sid))
     fav = res.scalar_one_or_none()
     
@@ -161,8 +180,8 @@ async def toggle_favorito(anime_id: int, request: Request, response: Response, d
     return {"status": status}
 
 @app.get("/anime/{anime_id}", response_class=HTMLResponse)
-async def anime_detail(request: Request, response: Response, anime_id: int, db: AsyncSession = Depends(get_db)):
-    sid = get_session_id(request, response)
+async def anime_detail(request: Request, anime_id: int, db: AsyncSession = Depends(get_db)):
+    sid = get_session_id(request)
     result = await db.execute(
         select(Anime)
         .options(selectinload(Anime.temporadas).selectinload(Temporada.episodios))
@@ -171,13 +190,32 @@ async def anime_detail(request: Request, response: Response, anime_id: int, db: 
     anime = result.scalar_one_or_none()
     if not anime:
         return HTMLResponse("Anime não encontrado", status_code=404)
+        
     fav_r = await db.execute(select(Favorito).where(Favorito.session_id == sid, Favorito.anime_id == anime_id))
     is_fav = fav_r.scalar_one_or_none() is not None
-    return templates.TemplateResponse(request=request, name="anime.html", context={"anime": anime, "is_fav": is_fav})
+    
+    # Busca último progresso neste anime
+    prog_r = await db.execute(
+        select(Progresso)
+        .join(Episodio, Progresso.episodio_id == Episodio.id)
+        .join(Temporada, Episodio.temporada_id == Temporada.id)
+        .where(Temporada.anime_id == anime_id, Progresso.session_id == sid)
+        .order_by(desc(Progresso.atualizado_em))
+        .limit(1)
+    )
+    ultimo_progresso = prog_r.scalar_one_or_none()
+    
+    resp = templates.TemplateResponse(request=request, name="anime.html", context={
+        "anime": anime, 
+        "is_fav": is_fav,
+        "ultimo_progresso": ultimo_progresso
+    })
+    set_session_cookie(resp, sid)
+    return resp
 
 @app.get("/player/{episodio_id}", response_class=HTMLResponse)
-async def player(request: Request, response: Response, episodio_id: int, db: AsyncSession = Depends(get_db)):
-    sid = get_session_id(request, response)
+async def player(request: Request, episodio_id: int, db: AsyncSession = Depends(get_db)):
+    sid = get_session_id(request)
     result = await db.execute(
         select(Episodio)
         .options(selectinload(Episodio.temporada).selectinload(Temporada.anime))
@@ -200,11 +238,14 @@ async def player(request: Request, response: Response, episodio_id: int, db: Asy
     prog_r = await db.execute(select(Progresso).where(Progresso.episodio_id == episodio_id, Progresso.session_id == sid))
     prog = prog_r.scalar_one_or_none()
     progresso = prog.progresso_segundos if prog else 0
-    return templates.TemplateResponse(request=request, name="player.html", context={
+    
+    resp = templates.TemplateResponse(request=request, name="player.html", context={
         "episodio": episodio, 
         "anime": full_anime, 
         "progresso": progresso
     })
+    set_session_cookie(resp, sid)
+    return resp
 
 
 @app.get("/api/resolve-stream/{episodio_id}")
@@ -353,22 +394,9 @@ async def registrar_view(episodio_id: int, db: AsyncSession = Depends(get_db)):
         await db.commit()
     return {"ok": True}
 
-@app.post("/api/favorito/{anime_id}")
-async def toggle_favorito(anime_id: int, request: Request, response: Response, db: AsyncSession = Depends(get_db)):
-    sid = get_session_id(request, response)
-    result = await db.execute(select(Favorito).where(Favorito.session_id == sid, Favorito.anime_id == anime_id))
-    fav = result.scalar_one_or_none()
-    if fav:
-        await db.delete(fav)
-        await db.commit()
-        return {"favorito": False}
-    db.add(Favorito(anime_id=anime_id, session_id=sid))
-    await db.commit()
-    return {"favorito": True}
-
 @app.post("/api/progresso/{episodio_id}")
-async def salvar_progresso(episodio_id: int, request: Request, response: Response, db: AsyncSession = Depends(get_db)):
-    sid = get_session_id(request, response)
+async def salvar_progresso(episodio_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    sid = get_session_id(request)
     body = await request.json()
     seg = float(body.get("segundos", 0))
     dur = float(body.get("duracao", 0))
@@ -395,9 +423,17 @@ async def import_start():
     global _import_proc
     if _import_proc and _import_proc.poll() is None:
         return {"ok": False, "msg": "Já em execução"}
+        
+    # GARANTIA: Derruba qualquer importador órfão para não ter DB local escrevendo logs
+    try:
+        subprocess.run(["pkill", "-f", "venv/bin/python importer.py"], check=False)
+    except: pass
+        
+    # Herda o ambiente atual incluindo variaveis do uvicorn como DATABASE_URL
     _import_proc = subprocess.Popen(
         ["venv/bin/python", "importer.py"],
-        cwd=str(Path(__file__).parent.parent)
+        cwd=str(Path(__file__).parent.parent),
+        env=os.environ.copy()
     )
     return {"ok": True, "pid": _import_proc.pid}
 

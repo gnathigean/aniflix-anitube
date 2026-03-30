@@ -8,8 +8,8 @@ from pathlib import Path
 # Carrega variáveis de ambiente do arquivo .env (especialmente DATABASE_URL)
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
-# Padrão: SQLite local se não houver variável de ambiente
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./animes.db")
+# Padrão: SQLite local se não houver variável de ambiente — Limpamos aspas extras do .env
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./animes.db").strip('"').strip("'")
 
 # Garante o uso do driver asyncpg para PostgreSQL
 if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql://"):
@@ -43,5 +43,7 @@ async def get_db():
         yield session
 
 async def init_db():
+    db_type = "SUPABASE/POSTGRES" if ("supabase" in DATABASE_URL or "postgres" in DATABASE_URL or "6543" in DATABASE_URL) else "SQLITE LOCAL"
+    print(f"[DB] 🗄️ Inicializando banco de dados: {db_type}")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
