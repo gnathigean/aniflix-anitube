@@ -14,9 +14,14 @@ if not DATABASE_URL or DATABASE_URL.startswith("sqlite"):
     print("⚠️ AVISO: DATABASE_URL ausente ou configurada para SQLite! Verifique o .env.")
     DATABASE_URL = "sqlite+aiosqlite:///./animes.db"
 else:
-    # Ajuste para drivers assíncronos
+    # Ajuste para drivers assíncronos e PgBouncer (Supabase)
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+    
+    # Se for Supabase/Postgres, desativa prepared statements na URL para o PgBouncer
+    if "postgresql" in DATABASE_URL and "prepared_statements" not in DATABASE_URL:
+        separator = "&" if "?" in DATABASE_URL else "?"
+        DATABASE_URL += f"{separator}prepared_statements=false"
 
 print(f"📦 [DB] Inicializando conexão com: {DATABASE_URL[:25]}...")
 
@@ -24,13 +29,16 @@ engine_args = {
     "echo": False,
     "pool_pre_ping": True,  # Verifica se a conexão está ativa antes de usar
 }
+from sqlalchemy.pool import NullPool
+
+# ... (código anterior)
+
 if "sqlite" in DATABASE_URL:
     engine_args["connect_args"] = {"timeout": 30}
 else:
     # Essencial para Supabase/PgBouncer (Transaction Pooler na porta 6543)
-    # Também limitamos o pool local para não estourar o do Supabase
-    engine_args["pool_size"] = 10
-    engine_args["max_overflow"] = 20
+    # Usamos NullPool porque o PgBouncer já faz o pooling. Evita conflito de prepared statements.
+    engine_args["poolclass"] = NullPool
     engine_args["connect_args"] = {
         "statement_cache_size": 0,
         "command_timeout": 30

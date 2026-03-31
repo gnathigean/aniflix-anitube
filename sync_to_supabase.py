@@ -11,13 +11,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger("sync_optimized")
 
 SQLITE_URL = "sqlite+aiosqlite:///./animes.db"
-from database.db import DATABASE_URL as SUPABASE_URL
+from database.db import DATABASE_URL as SUPABASE_URL, engine_args as REMOTE_ENGINE_ARGS
 
 async def sync():
     local_engine = create_async_engine(SQLITE_URL)
     local_session = async_sessionmaker(local_engine, expire_on_commit=False)
     
-    remote_engine = create_async_engine(SUPABASE_URL)
+    remote_engine = create_async_engine(SUPABASE_URL, **REMOTE_ENGINE_ARGS)
     remote_session = async_sessionmaker(remote_engine, expire_on_commit=False)
     
     logger.info("🚀 Iniciando Sincronização OTIMIZADA Local -> Supabase...")
