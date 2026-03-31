@@ -20,6 +20,7 @@ from api import stream_cache
 app = FastAPI(title="AnimeProxy Hub")
 app.include_router(proxy_router)
 app.mount("/static", StaticFiles(directory="frontend"), name="static")
+app.mount("/icons", StaticFiles(directory="frontend/icons"), name="icons")
 templates = Jinja2Templates(directory="frontend")
 
 def b64encode_filter(s):
