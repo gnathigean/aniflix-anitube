@@ -380,7 +380,7 @@ async function resolveAndPlay() {
             // Decodifica base64url para checar a extensão
             const b64 = data.url_b64.replace(/-/g, '+').replace(/_/g, '/');
             const urlDecoded = decodeURIComponent(atob(b64 + '=='.slice((2 - b64.length * 3) & 3)));
-            if (/\.mp4/i.test(urlDecoded)) mediaType = 'video/mp4';
+            if (/\.mp4/i.test(urlDecoded) || /googlevideo\.com/i.test(urlDecoded) || /video(\/|%2F)mp4/i.test(urlDecoded)) mediaType = 'video/mp4';
         } catch(e) {
             // Se falhar decodificação, mantém HLS como padrão
         }

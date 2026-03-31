@@ -314,16 +314,17 @@ async def reextract_stream(episodio_id: int, db: AsyncSession = Depends(get_db))
     # Invalida cache
     stream_cache.invalidate(episodio_id)
 
-    # 1. Se não tem URL de origem, tenta descobrir via mapeamento
+    # 1. Se não tem URL de origem, tenta descobrir via mapeamento ou Live Search
     if not ep.url_episodio_origem:
         try:
             anime_titulo = ep.temporada.anime.titulo
-            origin_url = await stream_cache.resolve_origin_url(anime_titulo, ep.numero, ep.idioma or "Legendado")
-            if origin_url:
-                ep.url_episodio_origem = origin_url
+            origin_info = await stream_cache.resolve_origin_url(anime_titulo, ep.numero, ep.idioma or "Legendado")
+            if origin_info and origin_info.get("page_url"):
+                logger.info(f"[API] ✨ Origem descoberta e salva para ep {episodio_id}: {origin_info['page_url']}")
+                ep.url_episodio_origem = origin_info["page_url"]
                 await db.commit()
         except Exception as e:
-            logger.error(f"[API] Falha ao descobrir origem para ep {episodio_id}: {e}")
+            logger.error(f"[API] Falha crítica ao descobrir origem para ep {episodio_id}: {e}")
 
     if not ep.url_episodio_origem:
         return JSONResponse({
@@ -351,8 +352,11 @@ async def reextract_stream(episodio_id: int, db: AsyncSession = Depends(get_db))
             "from_cache": False,
             "can_reextract": True
         })
+    except asyncio.TimeoutError:
+        return JSONResponse({"error": "Re-extração excedeu o tempo limite (Playwright)."}, status_code=504)
     except Exception as e:
-        return JSONResponse({"error": f"Re-extração falhou: {str(e)}"}, status_code=503)
+        logger.error(f"[API] Erro Fatal em reextract_stream: {e}")
+        return JSONResponse({"error": f"Erro interno: {str(e)}"}, status_code=503)
 
 
 @app.get("/api/cache/stats")
@@ -375,24 +379,28 @@ async def importer_page(request: Request):
 
 @app.post("/api/view/{episodio_id}")
 async def registrar_view(episodio_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(Episodio).options(selectinload(Episodio.temporada).selectinload(Temporada.anime))
-        .where(Episodio.id == episodio_id)
-    )
-    ep = result.scalar_one_or_none()
-    if ep:
-        ep.views_total = (ep.views_total or 0) + 1
-        ep.views_dia = (ep.views_dia or 0) + 1
-        ep.views_semana = (ep.views_semana or 0) + 1
-        ep.views_mes = (ep.views_mes or 0) + 1
-        
-        # Incrementa views totais no Anime
-        if ep.temporada and ep.temporada.anime:
-            anime = ep.temporada.anime
-            anime.visualizacoes_total = (anime.visualizacoes_total or 0) + 1
+    try:
+        result = await db.execute(
+            select(Episodio).options(selectinload(Episodio.temporada).selectinload(Temporada.anime))
+            .where(Episodio.id == episodio_id)
+        )
+        ep = result.scalar_one_or_none()
+        if ep:
+            ep.views_total = (ep.views_total or 0) + 1
+            ep.views_dia = (ep.views_dia or 0) + 1
+            ep.views_semana = (ep.views_semana or 0) + 1
+            ep.views_mes = (ep.views_mes or 0) + 1
             
-        await db.commit()
-    return {"ok": True}
+            if ep.temporada and ep.temporada.anime:
+                anime = ep.temporada.anime
+                anime.visualizacoes_total = (anime.visualizacoes_total or 0) + 1
+                
+            await db.commit()
+        return {"ok": True}
+    except Exception as e:
+        logger.error(f"[API] Erro ao registrar view {episodio_id}: {e}")
+        # Retorna 200 para não quebrar o player se apenas a view falhar
+        return {"ok": False, "error": "Database busy"}
 
 @app.post("/api/progresso/{episodio_id}")
 async def salvar_progresso(episodio_id: int, request: Request, db: AsyncSession = Depends(get_db)):

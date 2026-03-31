@@ -11,9 +11,17 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // Ignora requisições de API e Streamíng de video, garantindo natividade (HTTP 206)
+  if (e.request.url.includes('/stream') || e.request.url.includes('/api/')) {
+      return;
+  }
+
   e.respondWith(
     caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
+      return response || fetch(e.request).catch(err => {
+          console.error("[ServiceWorker] Fetch failed:", err);
+          return new Response("", { status: 502, statusText: "Bad Gateway/Offline" });
+      });
     })
   );
 });

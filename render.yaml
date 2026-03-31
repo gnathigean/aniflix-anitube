@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: aniflix-backend
+    env: python
+    buildCommand: ./build.sh
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Set this in Render Dashboard (Supabase Connection String)
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: /opt/render/project/.playwright-browsers
+    autoDeploy: true

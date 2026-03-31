@@ -2,28 +2,39 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import event
-from dotenv import load_dotenv
 from pathlib import Path
+from dotenv import load_dotenv
 
-# Carrega variáveis de ambiente do arquivo .env (especialmente DATABASE_URL)
-load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
+# Força o recarregamento do .env, ignorando o que estiver no sistema se vazio
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=env_path, override=True)
 
-# Padrão: SQLite local se não houver variável de ambiente — Limpamos aspas extras do .env
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./animes.db").strip('"').strip("'")
-
-# Garante o uso do driver asyncpg para PostgreSQL
-if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql://"):
-    # Substitui protocolos para garantir async
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip('"').strip("'")
+if not DATABASE_URL or DATABASE_URL.startswith("sqlite"):
+    print("⚠️ AVISO: DATABASE_URL ausente ou configurada para SQLite! Verifique o .env.")
+    DATABASE_URL = "sqlite+aiosqlite:///./animes.db"
+else:
+    # Ajuste para drivers assíncronos
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-engine_args = {"echo": False}
+print(f"📦 [DB] Inicializando conexão com: {DATABASE_URL[:25]}...")
+
+engine_args = {
+    "echo": False,
+    "pool_pre_ping": True,  # Verifica se a conexão está ativa antes de usar
+}
 if "sqlite" in DATABASE_URL:
     engine_args["connect_args"] = {"timeout": 30}
 else:
-    # Essencial para Supabase/PgBouncer (Transaction Pooler)
-    # Passamos via connect_args para o driver asyncpg
-    engine_args["connect_args"] = {"statement_cache_size": 0}
+    # Essencial para Supabase/PgBouncer (Transaction Pooler na porta 6543)
+    # Também limitamos o pool local para não estourar o do Supabase
+    engine_args["pool_size"] = 10
+    engine_args["max_overflow"] = 20
+    engine_args["connect_args"] = {
+        "statement_cache_size": 0,
+        "command_timeout": 30
+    }
 
 engine = create_async_engine(DATABASE_URL, **engine_args)
 

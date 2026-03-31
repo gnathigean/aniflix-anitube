@@ -77,11 +77,48 @@ class AniTubeProvider(BaseProvider):
             print(f"[AniTube] 🔍 Acessando: {episode_url}")
             try:
                 await page.goto(episode_url, wait_until="domcontentloaded", timeout=30000)
-            except:
-                await page.goto(episode_url, wait_until="load", timeout=30000)
+            except Exception:
+                try:
+                    await page.goto(episode_url, wait_until="load", timeout=30000)
+                except Exception as e:
+                    print(f"[AniTube] Timeout ao carregar página do episódio: {e}")
+                    return None
 
             # Simula atividade para disparar o player
             await page.mouse.wheel(0, 300); await asyncio.sleep(1)
+            
+            # --- ESTRATÉGIA 0: Extração Direta via Regex (Fast Path) ---
+            print("[AniTube] ⚡ Tentando capturar via Regex (Fast Path)...")
+            content = await page.content()
+            
+            # Padrão mais abrangente: busca URLs de stream dentro de qualquer aspa, inclusive escapadas
+            # Procura por: "file":"...", 'url':'...', "src": "...", etc.
+            patterns = [
+                r'(?:file|url|src|source|link)["\']\s*[:=]\s*["\'](https?://[^\s"\'<>]+(?:index\.m3u8|\.m3u8|\.mp4)[^\s"\'<>]*)["\']',
+                r'["\'](https?://[^\s"\'<>]+(?:index\.m3u8|\.m3u8|\.mp4)[^\s"\'<>]*\.m3u8)["\']', # Link puro em aspas
+                r'https?://[^\s"\'<>]+(?:index\.m3u8|\.m3u8|\.mp4)[^\s"\'<>]*' # Link solto no texto
+            ]
+            
+            found_urls = []
+            for p in patterns:
+                matches = re.findall(p, content, re.IGNORECASE)
+                found_urls.extend(matches)
+            
+            # Remove duplicatas e higieniza
+            unique_urls = list(dict.fromkeys([u.replace('\\/', '/') for u in found_urls]))
+            
+            for url_found in unique_urls:
+                if self.is_valid_stream(url_found):
+                    print(f"[AniTube] ✅ Estratégia 0 (Regex) encontrou: {url_found[:80]}...")
+                    # Referer é a própria página, User-Agent real
+                    headers = {
+                        "Referer": episode_url, 
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                        "Origin": "https://www.anitube.news"
+                    }
+                    headers_b64 = base64.urlsafe_b64encode(json.dumps(headers).encode()).decode()
+                    return {"url_stream_original": url_found, "headers_b64": headers_b64}
+
             await page.mouse.wheel(0, -300); await asyncio.sleep(1)
             await page.mouse.click(640, 360); await asyncio.sleep(1)
             await page.mouse.click(640, 400); await asyncio.sleep(3)
@@ -162,5 +199,39 @@ class AniTubeProvider(BaseProvider):
                 if extract_num(item['title']) == episode_number: return item['url']
                 if extract_num(item['url'].split('/')[-1]) == episode_number: return item['url']
             return None
+        finally:
+            await self.close_browser()
+
+    async def search_series(self, title: str) -> dict:
+        """
+        Busca um anime no site e retorna as URLs das páginas (Leg/Dub).
+        """
+        page = await self.init_browser()
+        results = {"leg": [], "dub": []}
+        try:
+            search_url = f"https://www.anitube.news/?s={title.replace(' ', '+')}"
+            print(f"[AniTube] 🔍 Buscando no site: {search_url}")
+            await page.goto(search_url, wait_until="domcontentloaded", timeout=30000)
+            
+            # Extrai todos os links de animes da busca
+            items = await page.evaluate("""() => {
+                return Array.from(document.querySelectorAll('.ani_loop_item_link'))
+                    .map(a => ({ title: a.title || a.innerText, url: a.href }));
+            }""")
+            
+            # Filtra os resultados que batem com o título (case-insensitive)
+            title_lower = title.lower()
+            for item in items:
+                ititle = item['title'].lower()
+                if title_lower in ititle or ititle in title_lower:
+                    if "dublado" in ititle:
+                        results["dub"].append(item['url'])
+                    else:
+                        results["leg"].append(item['url'])
+            
+            return results
+        except Exception as e:
+            print(f"[AniTube] Erro na busca: {e}")
+            return results
         finally:
             await self.close_browser()

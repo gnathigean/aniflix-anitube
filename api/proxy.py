@@ -1,19 +1,12 @@
 import base64
 import json
 import httpx
+import random
 from fastapi import APIRouter, Request, HTTPException, Response
 from fastapi.responses import StreamingResponse
 import urllib.parse
 
 router = APIRouter()
-
-# Cliente compartilhado com SSL desabilitado e timeout generoso
-client = httpx.AsyncClient(
-    timeout=httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0),
-    verify=False,
-    follow_redirects=True,
-    limits=httpx.Limits(max_connections=100, max_keepalive_connections=20)
-)
 
 def pad_b64(s: str) -> str:
     return s + "=" * ((4 - len(s) % 4) % 4)
@@ -26,108 +19,130 @@ async def proxy_stream(request: Request, url_b64: str, headers_b64: str = ""):
     except Exception:
         raise HTTPException(status_code=400, detail="Erro ao decodificar url_b64")
 
-    # Decodifica os headers (JSON) a partir de base64 urlsafe
     headers = {}
     if headers_b64:
         try:
             headers_str = base64.urlsafe_b64decode(pad_b64(headers_b64).encode()).decode("utf-8")
             headers = json.loads(headers_str)
         except Exception:
-            raise HTTPException(status_code=400, detail="Erro ao decodificar headers_b64")
-
-    # SANEAMENTO DE HEADERS: Remove campos que o httpx/servidor original podem rejeitar
-    forbidden_headers = ["host", "content-length", "connection", "accept-encoding", "content-type", "cookie"]
+            pass
+            
+    # Fallback user agents para mascaramento
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1"
+    ]
+    
+    # SANEAMENTO DE HEADERS: Filtramos apenas o essencial que causa conflito e retira Client Hints do HeadlessChrome
+    forbidden_headers = [
+        "host", "connection", "accept-encoding", 
+        "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform"
+    ]
     headers = {k: v for k, v in headers.items() if k.lower() not in forbidden_headers}
 
-    # Referer Fallback (Anti-Bloqueio)
-    if not headers.get("Referer") and not headers.get("referer"):
-        headers["Referer"] = "https://www.anitube.news/"
+    # Fallback caso os headers extraídos pelo bot não tenham User-Agent/Referer
+    if "user-agent" not in headers:
+        headers["user-agent"] = random.choice(user_agents)
+    if "referer" not in headers:
+        headers["referer"] = "https://youtube.googleapis.com/"
 
     # Repassa o cabeçalho Range para suportar Pular Abertura (Seek de vídeo)
     range_header = request.headers.get("Range")
     if range_header:
-        headers["Range"] = range_header
+        # Normalize para lowercase e evite chaves duplicadas (Ex: 'range' e 'Range' fariam o Google dar error 400)
+        if "Range" in headers: del headers["Range"]
+        if "range" in headers: del headers["range"]
+        headers["range"] = range_header
+
+    # Cliente LOCAL para não multiplexar conexões no GoogleVideo
+    local_client = httpx.AsyncClient(
+        timeout=httpx.Timeout(connect=15.0, read=45.0, write=15.0, pool=10.0),
+        verify=False,
+        http2=False,  # BUG H2 FASTAPI: Causa deadlock no stream de vídeo! HTTP/1.1 suporta 100% após strip do user-agent.
+        follow_redirects=True
+    )
 
     try:
         print(f"[Proxy] 🔄 Streaming: {url[:60]}...")
-        req = client.build_request("GET", url, headers=headers)
-        response = await client.send(req, stream=True)
+        req = local_client.build_request("GET", url, headers=headers)
+        response = await local_client.send(req, stream=True)
 
-        # Trata erros do servidor de origem com fallback
         if response.status_code >= 400:
+            error_body = await response.aread()
+            with open("/tmp/proxy_trace.txt", "w") as f:
+                f.write(f"FAILED!\nSTATUS: {response.status_code}\nURL: {url}\nHEADERS SENT: {headers}\nBODY: {error_body.decode('utf-8', 'ignore')}\n")
             print(f"[Proxy] ❌ Erro {response.status_code} no host original: {url[:100]}")
-            await response.aclose()
-            
-            # Fallback: tenta com outro User-Agent se for 403 ou 404
-            if response.status_code in (403, 404, 503):
-                fallback_headers = dict(headers)
-                fallback_headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36"
-                try:
-                    req2 = client.build_request("GET", url, headers=fallback_headers)
-                    response = await client.send(req2, stream=True)
-                    if response.status_code >= 400:
-                        await response.aclose()
-                        raise HTTPException(status_code=502, detail=f"Conteúdo indisponível no servidor de origem (HTTP {response.status_code}). URL pode ter expirado.")
-                except httpx.RequestError:
-                    raise HTTPException(status_code=502, detail="Falha no fallback de conexão.")
-            else:
-                raise HTTPException(status_code=502, detail=f"Conteúdo indisponível no servidor de origem (HTTP {response.status_code})")
+            await local_client.aclose()
+            raise HTTPException(status_code=502, detail=f"Conteúdo indisponível (HTTP {response.status_code})")
+
+        with open("/tmp/proxy_trace.txt", "w") as f:
+            f.write(f"SUCCESS!\nSTATUS: {response.status_code}\nCONTENT-TYPE: {response.headers.get('content-type')}\nHEADERS SENT: {headers}\nRESPONSE HEADERS: {response.headers}\n")
 
         # Repassa cabeçalhos essenciais para vídeo
         resp_headers = {}
         for key in ["content-type", "content-length", "content-range", "accept-ranges", "cache-control"]:
             if key in response.headers:
                 resp_headers[key] = response.headers[key]
+                
+        # Correção extra para Range requests
+        if response.status_code == 200 and range_header:
+            response.status_code = 206
+            if "content-range" not in resp_headers:
+                length = resp_headers.get("content-length", "*")
+                start = range_header.replace("bytes=", "").split("-")[0]
+                resp_headers["content-range"] = f"bytes {start}-{length}/{length}"
 
-        # SEGURANÇA: Se o servidor de origem retornar HTML quando esperamos vídeo, levantamos erro
         ctype = response.headers.get("content-type", "").lower()
         if "text/html" in ctype and ".m3u8" not in url.lower():
             print(f"[Proxy] ⚠️ Servidor de origem retornou HTML em vez de vídeo: {url[:80]}...")
             await response.aclose()
-            raise HTTPException(status_code=502, detail="Servidor de origem retornou conteúdo inválido (HTML). Acesso pode estar bloqueado.")
+            await local_client.aclose()
+            raise HTTPException(status_code=502, detail="Servidor de origem retornou conteúdo inválido")
 
-        # Verifica se é uma playlist HLS (m3u8) para reescreveremos os links internos (.ts)
         is_m3u8 = "mpegurl" in ctype or ".m3u8" in url.lower()
         
         if is_m3u8:
-            content = await response.aread()
-            text = content.decode("utf-8")
+            text = ""
+            async for chunk in response.aiter_text():
+                text += chunk
+            await response.aclose()
+            await local_client.aclose()
             
+            # Formata playlist com rotas de proxy pro HLS local
             new_lines = []
             for line in text.splitlines():
-                line = line.strip()
-                if not line or line.startswith("#"):
+                if line.startswith("#") or not line.strip():
                     new_lines.append(line)
                 else:
-                    # Resolve URL relativa para absoluta
-                    abs_url = urllib.parse.urljoin(url, line)
-                    # Codifica o link interno do segmento .ts / sub-m3u8 para o nosso proxy
-                    new_b64 = base64.urlsafe_b64encode(abs_url.encode("utf-8")).decode("utf-8")
-                    proxy_url = f"/stream?url_b64={new_b64}&headers_b64={headers_b64}"
-                    new_lines.append(proxy_url)
-            
-            modified_content = "\n".join(new_lines).encode("utf-8")
-            if "content-length" in resp_headers:
-                resp_headers["content-length"] = str(len(modified_content))
-                
-            return Response(
-                content=modified_content,
-                status_code=response.status_code,
-                headers=resp_headers
-            )
-            
+                    if not line.startswith("http"):
+                        base = url.rsplit("/", 1)[0]
+                        line = f"{base}/{line}"
+                    part_b64 = base64.urlsafe_b64encode(line.encode()).decode()
+                    part_proxy = f"/stream?url_b64={part_b64}&headers_b64={headers_b64}"
+                    new_lines.append(part_proxy)
+                    
+            return Response(content="\n".join(new_lines), media_type="application/vnd.apple.mpegurl")
+
         else:
             # Arquivo binário (Segmento de Vídeo .ts ou .mp4), retorna via Stream
             async def stream_generator():
-                async for chunk in response.aiter_bytes():
-                    yield chunk
+                try:
+                    async for chunk in response.aiter_bytes():
+                        yield chunk
+                finally:
+                    await response.aclose()
+                    await local_client.aclose()
 
             return StreamingResponse(
                 stream_generator(),
                 status_code=response.status_code,
-                headers=resp_headers,
-                background=response.aclose
+                headers=resp_headers
             )
 
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=500, detail=f"Falha de comunicação com o servidor original: {str(e)}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Proxy] ❌ Exceção ao capturar vídeo proxy: {e}")
+        await local_client.aclose()
+        raise HTTPException(status_code=500, detail="Sem acesso ao arquivo original")
