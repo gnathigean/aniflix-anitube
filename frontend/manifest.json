@@ -8,14 +8,16 @@
   "description": "Assista animes online com experiência premium.",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png",
+      "src": "https://i.imgur.com/B1f1bRH.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png",
+      "src": "https://i.imgur.com/edGLEFl.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

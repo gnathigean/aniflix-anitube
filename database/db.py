@@ -17,11 +17,6 @@ else:
     # Ajuste para drivers assíncronos e PgBouncer (Supabase)
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
-    
-    # Se for Supabase/Postgres, desativa prepared statements na URL para o PgBouncer
-    if "postgresql" in DATABASE_URL and "prepared_statements" not in DATABASE_URL:
-        separator = "&" if "?" in DATABASE_URL else "?"
-        DATABASE_URL += f"{separator}prepared_statements=false"
 
 print(f"📦 [DB] Inicializando conexão com: {DATABASE_URL[:25]}...")
 
