@@ -103,26 +103,38 @@ async def proxy_stream(request: Request, url_b64: str, headers_b64: str = ""):
         is_m3u8 = "mpegurl" in ctype or ".m3u8" in url.lower()
         
         if is_m3u8:
-            text = ""
-            async for chunk in response.aiter_text():
-                text += chunk
-            await response.aclose()
-            await local_client.aclose()
-            
-            # Formata playlist com rotas de proxy pro HLS local
-            new_lines = []
-            for line in text.splitlines():
-                if line.startswith("#") or not line.strip():
-                    new_lines.append(line)
-                else:
-                    if not line.startswith("http"):
-                        base = url.rsplit("/", 1)[0]
-                        line = f"{base}/{line}"
-                    part_b64 = base64.urlsafe_b64encode(line.encode()).decode()
-                    part_proxy = f"/stream?url_b64={part_b64}&headers_b64={headers_b64}"
-                    new_lines.append(part_proxy)
-                    
-            return Response(content="\n".join(new_lines), media_type="application/vnd.apple.mpegurl")
+            try:
+                # playlists m3u8 geralmente são pequenas, aread() é mais seguro que aiter_text() para evitar crash de encoding
+                raw_content = await response.aread()
+                text = raw_content.decode("utf-8", errors="ignore")
+                await response.aclose()
+                await local_client.aclose()
+                
+                # Se o "m3u8" na verdade for um arquivo binário (erro comum de redirecionamento do host)
+                if not text.strip().startswith("#EXTM3U"):
+                    print(f"[Proxy] ⚠️ M3U8 inválido ou binário detectado em {url[:80]}")
+                    # Reinicia requisição como binário se falhar
+                    return Response(content=raw_content, media_type=ctype)
+
+                # Formata playlist com rotas de proxy pro HLS local
+                new_lines = []
+                for line in text.splitlines():
+                    if line.startswith("#") or not line.strip():
+                        new_lines.append(line)
+                    else:
+                        if not line.startswith("http"):
+                            base = url.rsplit("/", 1)[0]
+                            line = f"{base}/{line}"
+                        part_b64 = base64.urlsafe_b64encode(line.encode()).decode()
+                        part_proxy = f"/stream?url_b64={part_b64}&headers_b64={headers_b64}"
+                        new_lines.append(part_proxy)
+                        
+                return Response(content="\n".join(new_lines), media_type="application/vnd.apple.mpegurl")
+            except Exception as e:
+                print(f"[Proxy] ⚠️ Falha ao processar M3U8: {e}. Retornando como binário.")
+                # Fallback: retorna o conteúdo bruto se falhar o Parse
+                if not 'raw_content' in locals(): raw_content = await response.aread()
+                return Response(content=raw_content, media_type=ctype)
 
         else:
             # Arquivo binário (Segmento de Vídeo .ts ou .mp4), retorna via Stream
@@ -131,8 +143,10 @@ async def proxy_stream(request: Request, url_b64: str, headers_b64: str = ""):
                     async for chunk in response.aiter_bytes():
                         yield chunk
                 finally:
-                    await response.aclose()
-                    await local_client.aclose()
+                    if not response.is_closed:
+                        await response.aclose()
+                    if not local_client.is_closed:
+                        await local_client.aclose()
 
             return StreamingResponse(
                 stream_generator(),
@@ -143,6 +157,9 @@ async def proxy_stream(request: Request, url_b64: str, headers_b64: str = ""):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"[Proxy] ❌ Exceção ao capturar vídeo proxy: {e}")
-        await local_client.aclose()
-        raise HTTPException(status_code=500, detail="Sem acesso ao arquivo original")
+        print(f"[Proxy] ❌ ERRO CRÍTICO no proxy: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        if not local_client.is_closed:
+             await local_client.aclose()
+        raise HTTPException(status_code=500, detail=f"Erro interno no proxy: {str(e)}")

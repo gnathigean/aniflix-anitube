@@ -233,13 +233,7 @@ nav a.active { font-weight: 700; color: white; }
         align-items: flex-start;
         gap: 6px;
     }
-    header .header-top {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    #main-header nav { display: none; }
+    header nav { display: none; }
     .logo { font-size: 1.5rem; letter-spacing: -1px; }
     .header-icons { display: flex; align-items: center; gap: 14px; }
     .search-input.expanded { width: 130px; }
@@ -542,6 +536,7 @@ nav a.active { font-weight: 700; color: white; }
         try {
             let url = `/api/animes?offset=${offset}&limit=${limit}`;
             if (currentCategory) url += `&categoria=${currentCategory}`;
+            if (currentQuery) url += `&q=${encodeURIComponent(currentQuery)}`;
             const res = await fetch(url);
             const data = await res.json();
             if (!data.length) { hasMore = false; document.getElementById('loading-trigger').style.display='none'; return; }
@@ -556,6 +551,34 @@ nav a.active { font-weight: 700; color: white; }
             offset += data.length;
         } catch (e) { console.error(e); } finally { loading = false; }
     }
+
+    // --- Pesquisa Netflix Style ---
+    const searchIcon = document.getElementById('search-icon');
+    const searchInput = document.getElementById('search-input');
+
+    searchIcon.onclick = (e) => {
+        e.stopPropagation();
+        searchInput.classList.toggle('expanded');
+        if (searchInput.classList.contains('expanded')) searchInput.focus();
+    };
+
+    searchInput.onclick = (e) => e.stopPropagation();
+
+    document.addEventListener('click', () => {
+        if (!searchInput.value) searchInput.classList.remove('expanded');
+    });
+
+    let searchTimeout;
+    searchInput.oninput = (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentQuery = e.target.value;
+            offset = 0;
+            hasMore = true;
+            document.getElementById('main-catalog').innerHTML = "";
+            loadMoreAnimes();
+        }, 500);
+    };
 
     document.addEventListener('DOMContentLoaded', () => { if (document.getElementById('main-catalog').children.length === 0) loadMoreAnimes(); });
 </script>
