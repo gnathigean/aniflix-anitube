@@ -5373,7 +5373,7 @@
       "https://www.anitube.news/video/986821/"
     ],
     "dub": [],
-    "done": false,
+    "done": true,
     "done_episodes": [
       "https://www.anitube.news/video/989301/",
       "https://www.anitube.news/video/989029/",
@@ -5390,7 +5390,8 @@
       "https://www.anitube.news/video/987108/",
       "https://www.anitube.news/video/987078/",
       "https://www.anitube.news/video/986823/",
-      "https://www.anitube.news/video/986824/"
+      "https://www.anitube.news/video/986824/",
+      "https://www.anitube.news/video/986825/"
     ]
   },
   "Dragon Raja II": {
@@ -5398,28 +5399,102 @@
       "https://www.anitube.news/video/1004579/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/1026510/",
+      "https://www.anitube.news/video/1025514/",
+      "https://www.anitube.news/video/1024590/",
+      "https://www.anitube.news/video/1023419/",
+      "https://www.anitube.news/video/1022298/",
+      "https://www.anitube.news/video/1021193/",
+      "https://www.anitube.news/video/1019431/",
+      "https://www.anitube.news/video/1018433/",
+      "https://www.anitube.news/video/1017004/",
+      "https://www.anitube.news/video/1013843/",
+      "https://www.anitube.news/video/1013840/",
+      "https://www.anitube.news/video/1013834/",
+      "https://www.anitube.news/video/1006796/",
+      "https://www.anitube.news/video/1006577/",
+      "https://www.anitube.news/video/1006417/",
+      "https://www.anitube.news/video/1005974/",
+      "https://www.anitube.news/video/1005968/",
+      "https://www.anitube.news/video/1004827/",
+      "https://www.anitube.news/video/1004581/",
+      "https://www.anitube.news/video/1004582/",
+      "https://www.anitube.news/video/1004583/",
+      "https://www.anitube.news/video/1004584/",
+      "https://www.anitube.news/video/1004585/",
+      "https://www.anitube.news/video/1004586/"
+    ]
   },
   "Dragon Raja II (JP Audio)": {
     "leg": [
       "https://www.anitube.news/video/1017149/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/1028666/",
+      "https://www.anitube.news/video/1027111/",
+      "https://www.anitube.news/video/1025946/",
+      "https://www.anitube.news/video/1025322/",
+      "https://www.anitube.news/video/1024577/",
+      "https://www.anitube.news/video/1023109/",
+      "https://www.anitube.news/video/1021769/",
+      "https://www.anitube.news/video/1021436/",
+      "https://www.anitube.news/video/1021435/",
+      "https://www.anitube.news/video/1021434/",
+      "https://www.anitube.news/video/1017151/",
+      "https://www.anitube.news/video/1017152/"
+    ]
   },
   "Dragon, Ie wo Kau.": {
     "leg": [
       "https://www.anitube.news/video/929909/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/929911/",
+      "https://www.anitube.news/video/929912/",
+      "https://www.anitube.news/video/929913/",
+      "https://www.anitube.news/video/929914/",
+      "https://www.anitube.news/video/929915/",
+      "https://www.anitube.news/video/929916/",
+      "https://www.anitube.news/video/929917/",
+      "https://www.anitube.news/video/929918/",
+      "https://www.anitube.news/video/929919/",
+      "https://www.anitube.news/video/929920/",
+      "https://www.anitube.news/video/929921/",
+      "https://www.anitube.news/video/929922/"
+    ]
   },
   "Dragonaut: The Resonance": {
     "leg": [
       "https://www.anitube.news/video/56947/"
     ],
     "dub": [],
-    "done": false
+    "done": false,
+    "done_episodes": [
+      "https://www.anitube.news/video/985513/",
+      "https://www.anitube.news/video/56975/",
+      "https://www.anitube.news/video/56976/",
+      "https://www.anitube.news/video/56974/",
+      "https://www.anitube.news/video/56980/",
+      "https://www.anitube.news/video/56978/",
+      "https://www.anitube.news/video/56972/",
+      "https://www.anitube.news/video/56981/",
+      "https://www.anitube.news/video/56971/",
+      "https://www.anitube.news/video/56973/",
+      "https://www.anitube.news/video/56977/",
+      "https://www.anitube.news/video/56970/",
+      "https://www.anitube.news/video/56969/",
+      "https://www.anitube.news/video/56966/",
+      "https://www.anitube.news/video/56968/",
+      "https://www.anitube.news/video/56964/",
+      "https://www.anitube.news/video/56967/",
+      "https://www.anitube.news/video/56962/"
+    ]
   },
   "Dramatical Murder": {
     "leg": [

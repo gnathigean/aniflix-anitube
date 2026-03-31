@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Aniflix — Assista Animes Online</title>
+<title>Ranking — ANIFLIX</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#E50914">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -40,13 +40,19 @@ body {
 header {
     position: fixed;
     top: 0; width: 100%; height: 68px;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 4%;
     z-index: 1000;
     transition: background-color 0.5s;
     background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+    padding: 0 4%;
 }
 header.scrolled { background-color: var(--bg-black); }
+
+.header-container {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
 
 .logo { 
     font-size: 1.8rem; font-weight: 900; color: var(--netflix-red); 
@@ -141,6 +147,13 @@ nav a.active { font-weight: 700; color: white; }
 .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--netflix-red); border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Hide mobile elements on desktop */
+.mobile-cat-pills { display: none; }
+
+@media (max-width: 768px) {
+    .header-container { flex-direction: column; align-items: flex-start; justify-content: flex-start; height: auto; }
+}
+
 /* Netflix Search Bar */
 .search-box { position: relative; display: flex; align-items: center; justify-content: flex-end; }
 .search-icon { 
@@ -204,12 +217,14 @@ nav a.active { font-weight: 700; color: white; }
 
     header {
         height: auto;
-        flex-direction: column;
-        align-items: flex-start;
         padding: 10px 14px 6px;
         background: rgba(0,0,0,0.95);
-        gap: 6px;
         position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
+    }
+    .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
     }
     header .header-top {
         width: 100%;
@@ -352,35 +367,37 @@ nav a.active { font-weight: 700; color: white; }
 <body>
 
 <header id="main-header">
-    <div class="header-top">
-        <div style="display: flex; align-items: center; gap: 40px;">
-            <a href="/" class="logo">ANIFLIX</a>
-            <nav id="main-nav">
-                <a href="#" onclick="changeCategory(null, this)" class="active">Início</a>
-                <a href="#" onclick="changeCategory('animes', this)">Animes</a>
-                <a href="#" onclick="changeCategory('filmes', this)">Filmes</a>
-                <a href="#" onclick="changeCategory('bombando', this)">Bombando</a>
-                <a href="#" onclick="changeCategory('favoritos', this)">Minha Lista</a>
-            </nav>
-        </div>
-        <div class="header-icons">
-            <div class="search-box">
-                <input type="text" id="search-input" class="search-input" placeholder="Títulos, gêneros...">
-                <span id="search-icon" class="search-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="7"></circle>
-                        <line x1="21" y1="21" x2="16" y2="16"></line>
-                    </svg>
-                </span>
+    <div class="header-container">
+        <div class="header-top" style="display: flex; align-items: center; gap: 40px; justify-content: space-between; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 40px;">
+                <a href="/" class="logo">ANIFLIX</a>
+                <nav id="main-nav">
+                    <a href="#" onclick="changeCategory(null, this)" class="active">Início</a>
+                    <a href="#" onclick="changeCategory('animes', this)">Animes</a>
+                    <a href="#" onclick="changeCategory('filmes', this)">Filmes</a>
+                    <a href="#" onclick="changeCategory('bombando', this)">Bombando</a>
+                    <a href="#" onclick="changeCategory('favoritos', this)">Minha Lista</a>
+                </nav>
+            </div>
+            <div class="header-icons">
+                <div class="search-box">
+                    <input type="text" id="search-input" class="search-input" placeholder="Títulos, gêneros...">
+                    <span id="search-icon" class="search-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <line x1="21" y1="21" x2="16" y2="16"></line>
+                        </svg>
+                    </span>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="mobile-cat-pills" id="mobile-cat-pills">
-        <button class="active" onclick="changeCategory(null, this)">Início</button>
-        <button onclick="changeCategory('animes', this)">Animes</button>
-        <button onclick="changeCategory('filmes', this)">Filmes</button>
-        <button onclick="changeCategory('bombando', this)">Bombando</button>
-        <button onclick="changeCategory('favoritos', this)">Minha Lista</button>
+        <div class="mobile-cat-pills" id="mobile-cat-pills">
+            <button class="active" onclick="changeCategory(null, this)">Início</button>
+            <button onclick="changeCategory('animes', this)">Animes</button>
+            <button onclick="changeCategory('filmes', this)">Filmes</button>
+            <button onclick="changeCategory('bombando', this)">Bombando</button>
+            <button onclick="changeCategory('favoritos', this)">Minha Lista</button>
+        </div>
     </div>
 </header>
 
