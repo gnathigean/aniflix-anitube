@@ -5615,21 +5615,65 @@
       "https://www.anitube.news/video/84844/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/85081/",
+      "https://www.anitube.news/video/85080/",
+      "https://www.anitube.news/video/85079/",
+      "https://www.anitube.news/video/85078/",
+      "https://www.anitube.news/video/85077/",
+      "https://www.anitube.news/video/85076/",
+      "https://www.anitube.news/video/85075/",
+      "https://www.anitube.news/video/85074/",
+      "https://www.anitube.news/video/85072/",
+      "https://www.anitube.news/video/85073/",
+      "https://www.anitube.news/video/85071/",
+      "https://www.anitube.news/video/85070/"
+    ]
   },
   "Dual! Parallel Trouble Adventure": {
     "leg": [
       "https://www.anitube.news/video/84845/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/85095/",
+      "https://www.anitube.news/video/85094/",
+      "https://www.anitube.news/video/85093/",
+      "https://www.anitube.news/video/85091/",
+      "https://www.anitube.news/video/85092/",
+      "https://www.anitube.news/video/85090/",
+      "https://www.anitube.news/video/85089/",
+      "https://www.anitube.news/video/85088/",
+      "https://www.anitube.news/video/85087/",
+      "https://www.anitube.news/video/85086/",
+      "https://www.anitube.news/video/85085/",
+      "https://www.anitube.news/video/85084/",
+      "https://www.anitube.news/video/85083/",
+      "https://www.anitube.news/video/85082/"
+    ]
   },
   "Dumbbell Nan Kilo Moteru?": {
     "leg": [
       "https://www.anitube.news/video/881753/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/881763/",
+      "https://www.anitube.news/video/881762/",
+      "https://www.anitube.news/video/881758/",
+      "https://www.anitube.news/video/881761/",
+      "https://www.anitube.news/video/881759/",
+      "https://www.anitube.news/video/881760/",
+      "https://www.anitube.news/video/881757/",
+      "https://www.anitube.news/video/881756/",
+      "https://www.anitube.news/video/881766/",
+      "https://www.anitube.news/video/881765/",
+      "https://www.anitube.news/video/881764/",
+      "https://www.anitube.news/video/881755/"
+    ]
   },
   "Dungeon Meshi": {
     "leg": [
@@ -5638,168 +5682,582 @@
     "dub": [
       "https://www.anitube.news/video/970252/"
     ],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/988770/",
+      "https://www.anitube.news/video/988581/",
+      "https://www.anitube.news/video/988321/",
+      "https://www.anitube.news/video/988153/",
+      "https://www.anitube.news/video/987959/",
+      "https://www.anitube.news/video/987613/",
+      "https://www.anitube.news/video/987415/",
+      "https://www.anitube.news/video/987221/",
+      "https://www.anitube.news/video/986998/",
+      "https://www.anitube.news/video/986749/",
+      "https://www.anitube.news/video/986479/",
+      "https://www.anitube.news/video/986055/",
+      "https://www.anitube.news/video/985594/",
+      "https://www.anitube.news/video/983113/",
+      "https://www.anitube.news/video/981883/",
+      "https://www.anitube.news/video/981655/",
+      "https://www.anitube.news/video/980770/",
+      "https://www.anitube.news/video/979294/",
+      "https://www.anitube.news/video/977326/",
+      "https://www.anitube.news/video/975329/",
+      "https://www.anitube.news/video/973635/",
+      "https://www.anitube.news/video/972377/",
+      "https://www.anitube.news/video/971058/",
+      "https://www.anitube.news/video/970245/",
+      "https://www.anitube.news/video/991944/",
+      "https://www.anitube.news/video/991943/",
+      "https://www.anitube.news/video/991942/",
+      "https://www.anitube.news/video/991941/",
+      "https://www.anitube.news/video/991940/",
+      "https://www.anitube.news/video/991939/",
+      "https://www.anitube.news/video/987640/",
+      "https://www.anitube.news/video/987639/",
+      "https://www.anitube.news/video/987638/",
+      "https://www.anitube.news/video/987637/",
+      "https://www.anitube.news/video/987636/",
+      "https://www.anitube.news/video/987635/",
+      "https://www.anitube.news/video/985598/",
+      "https://www.anitube.news/video/985596/",
+      "https://www.anitube.news/video/982439/",
+      "https://www.anitube.news/video/982433/",
+      "https://www.anitube.news/video/981020/",
+      "https://www.anitube.news/video/979552/",
+      "https://www.anitube.news/video/977544/",
+      "https://www.anitube.news/video/975707/",
+      "https://www.anitube.news/video/973637/",
+      "https://www.anitube.news/video/972379/",
+      "https://www.anitube.news/video/971061/",
+      "https://www.anitube.news/video/970254/"
+    ]
   },
   "Dungeon ni Deai o Motomeru no wa Machigatte Iru Darouka": {
     "leg": [
       "https://www.anitube.news/video/929937/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/971410/",
+      "https://www.anitube.news/video/929939/",
+      "https://www.anitube.news/video/929940/",
+      "https://www.anitube.news/video/929941/",
+      "https://www.anitube.news/video/929942/",
+      "https://www.anitube.news/video/929943/",
+      "https://www.anitube.news/video/929944/",
+      "https://www.anitube.news/video/929945/",
+      "https://www.anitube.news/video/929946/",
+      "https://www.anitube.news/video/929947/",
+      "https://www.anitube.news/video/929948/",
+      "https://www.anitube.news/video/929949/",
+      "https://www.anitube.news/video/929950/",
+      "https://www.anitube.news/video/929951/"
+    ]
   },
   "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka 2 Temporada": {
     "leg": [
       "https://www.anitube.news/video/880483/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/882000/",
+      "https://www.anitube.news/video/881674/",
+      "https://www.anitube.news/video/881587/",
+      "https://www.anitube.news/video/881425/",
+      "https://www.anitube.news/video/881335/",
+      "https://www.anitube.news/video/881213/",
+      "https://www.anitube.news/video/881139/",
+      "https://www.anitube.news/video/881048/",
+      "https://www.anitube.news/video/880967/",
+      "https://www.anitube.news/video/880876/",
+      "https://www.anitube.news/video/880770/",
+      "https://www.anitube.news/video/880486/",
+      "https://www.anitube.news/video/880485/"
+    ]
   },
   "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka 3 Temporada": {
     "leg": [
       "https://www.anitube.news/video/897369/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/904479/",
+      "https://www.anitube.news/video/899265/",
+      "https://www.anitube.news/video/899134/",
+      "https://www.anitube.news/video/898974/",
+      "https://www.anitube.news/video/898810/",
+      "https://www.anitube.news/video/898643/",
+      "https://www.anitube.news/video/898474/",
+      "https://www.anitube.news/video/898314/",
+      "https://www.anitube.news/video/898131/",
+      "https://www.anitube.news/video/897974/",
+      "https://www.anitube.news/video/897753/",
+      "https://www.anitube.news/video/897597/",
+      "https://www.anitube.news/video/897372/"
+    ]
   },
   "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka 4 Temporada": {
     "leg": [
       "https://www.anitube.news/video/913272/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/915063/",
+      "https://www.anitube.news/video/914924/",
+      "https://www.anitube.news/video/914777/",
+      "https://www.anitube.news/video/914580/",
+      "https://www.anitube.news/video/914228/",
+      "https://www.anitube.news/video/913778/",
+      "https://www.anitube.news/video/913731/",
+      "https://www.anitube.news/video/913639/",
+      "https://www.anitube.news/video/913528/",
+      "https://www.anitube.news/video/913399/",
+      "https://www.anitube.news/video/913275/"
+    ]
   },
   "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka 4 Temporada (": {
     "leg": [
       "https://www.anitube.news/video/930797/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/930800/",
+      "https://www.anitube.news/video/930801/",
+      "https://www.anitube.news/video/930802/",
+      "https://www.anitube.news/video/930803/",
+      "https://www.anitube.news/video/930804/",
+      "https://www.anitube.news/video/930805/",
+      "https://www.anitube.news/video/930806/",
+      "https://www.anitube.news/video/930807/",
+      "https://www.anitube.news/video/930808/",
+      "https://www.anitube.news/video/930809/",
+      "https://www.anitube.news/video/930810/"
+    ]
   },
   "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka Gaiden: Sword Oratoria": {
     "leg": [
       "https://www.anitube.news/video/57102/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/880824/",
+      "https://www.anitube.news/video/57118/",
+      "https://www.anitube.news/video/57117/",
+      "https://www.anitube.news/video/57112/",
+      "https://www.anitube.news/video/57115/",
+      "https://www.anitube.news/video/57116/",
+      "https://www.anitube.news/video/57114/",
+      "https://www.anitube.news/video/57121/",
+      "https://www.anitube.news/video/57119/",
+      "https://www.anitube.news/video/57113/",
+      "https://www.anitube.news/video/57111/",
+      "https://www.anitube.news/video/57110/"
+    ]
   },
   "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka: Familia Myth V (DanMachi 5)": {
     "leg": [
       "https://www.anitube.news/video/993819/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/1000267/",
+      "https://www.anitube.news/video/1000073/",
+      "https://www.anitube.news/video/999509/",
+      "https://www.anitube.news/video/999483/",
+      "https://www.anitube.news/video/997254/",
+      "https://www.anitube.news/video/996824/",
+      "https://www.anitube.news/video/996040/",
+      "https://www.anitube.news/video/995860/",
+      "https://www.anitube.news/video/995684/",
+      "https://www.anitube.news/video/995419/",
+      "https://www.anitube.news/video/995077/",
+      "https://www.anitube.news/video/994796/",
+      "https://www.anitube.news/video/994598/",
+      "https://www.anitube.news/video/994148/",
+      "https://www.anitube.news/video/993821/"
+    ]
   },
   "Dungeon no Naka no Hito": {
     "leg": [
       "https://www.anitube.news/video/989621/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/993659/",
+      "https://www.anitube.news/video/993656/",
+      "https://www.anitube.news/video/993304/",
+      "https://www.anitube.news/video/993157/",
+      "https://www.anitube.news/video/992977/",
+      "https://www.anitube.news/video/992699/",
+      "https://www.anitube.news/video/992702/",
+      "https://www.anitube.news/video/992110/",
+      "https://www.anitube.news/video/990426/",
+      "https://www.anitube.news/video/990148/",
+      "https://www.anitube.news/video/990140/",
+      "https://www.anitube.news/video/989623/"
+    ]
   },
   "Durarara!!": {
     "leg": [
       "https://www.anitube.news/video/932956/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/932958/",
+      "https://www.anitube.news/video/932960/",
+      "https://www.anitube.news/video/932961/",
+      "https://www.anitube.news/video/932962/",
+      "https://www.anitube.news/video/932963/",
+      "https://www.anitube.news/video/932964/",
+      "https://www.anitube.news/video/932965/",
+      "https://www.anitube.news/video/932966/",
+      "https://www.anitube.news/video/932967/",
+      "https://www.anitube.news/video/932968/",
+      "https://www.anitube.news/video/932969/",
+      "https://www.anitube.news/video/932970/",
+      "https://www.anitube.news/video/932971/",
+      "https://www.anitube.news/video/932972/",
+      "https://www.anitube.news/video/932973/",
+      "https://www.anitube.news/video/932974/",
+      "https://www.anitube.news/video/932975/",
+      "https://www.anitube.news/video/932976/",
+      "https://www.anitube.news/video/932977/",
+      "https://www.anitube.news/video/932978/",
+      "https://www.anitube.news/video/932979/",
+      "https://www.anitube.news/video/932980/",
+      "https://www.anitube.news/video/932981/"
+    ]
   },
   "Durarara!!x2 Ketsu": {
     "leg": [
       "https://www.anitube.news/video/57065/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/933011/",
+      "https://www.anitube.news/video/933012/",
+      "https://www.anitube.news/video/933013/",
+      "https://www.anitube.news/video/933014/",
+      "https://www.anitube.news/video/933015/",
+      "https://www.anitube.news/video/933016/",
+      "https://www.anitube.news/video/933017/",
+      "https://www.anitube.news/video/933018/",
+      "https://www.anitube.news/video/933019/",
+      "https://www.anitube.news/video/933020/",
+      "https://www.anitube.news/video/933021/",
+      "https://www.anitube.news/video/933022/"
+    ]
   },
   "Durarara!!x2 Shou": {
     "leg": [
       "https://www.anitube.news/video/57051/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/57059/",
+      "https://www.anitube.news/video/57061/",
+      "https://www.anitube.news/video/57063/",
+      "https://www.anitube.news/video/57058/",
+      "https://www.anitube.news/video/57062/",
+      "https://www.anitube.news/video/57060/",
+      "https://www.anitube.news/video/57056/",
+      "https://www.anitube.news/video/57057/",
+      "https://www.anitube.news/video/57055/",
+      "https://www.anitube.news/video/57054/",
+      "https://www.anitube.news/video/57053/",
+      "https://www.anitube.news/video/57052/"
+    ]
   },
   "Durarara!!x2 Ten": {
     "leg": [
       "https://www.anitube.news/video/57036/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/933038/",
+      "https://www.anitube.news/video/933039/",
+      "https://www.anitube.news/video/933040/",
+      "https://www.anitube.news/video/933041/",
+      "https://www.anitube.news/video/933042/",
+      "https://www.anitube.news/video/933043/",
+      "https://www.anitube.news/video/933044/",
+      "https://www.anitube.news/video/933045/",
+      "https://www.anitube.news/video/933046/",
+      "https://www.anitube.news/video/933047/",
+      "https://www.anitube.news/video/933048/",
+      "https://www.anitube.news/video/933049/"
+    ]
   },
   "Dynamic Chord – Todos os Episodio": {
     "leg": [
       "https://www.anitube.news/video/84846/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/85108/",
+      "https://www.anitube.news/video/85107/",
+      "https://www.anitube.news/video/85106/",
+      "https://www.anitube.news/video/85105/",
+      "https://www.anitube.news/video/85103/",
+      "https://www.anitube.news/video/85104/",
+      "https://www.anitube.news/video/85102/",
+      "https://www.anitube.news/video/85100/",
+      "https://www.anitube.news/video/85099/",
+      "https://www.anitube.news/video/85101/",
+      "https://www.anitube.news/video/85098/",
+      "https://www.anitube.news/video/85097/"
+    ]
   },
   "E’s Otherwise": {
     "leg": [
       "https://www.anitube.news/video/58054/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/58080/",
+      "https://www.anitube.news/video/58079/",
+      "https://www.anitube.news/video/58078/",
+      "https://www.anitube.news/video/58077/",
+      "https://www.anitube.news/video/58076/",
+      "https://www.anitube.news/video/58073/",
+      "https://www.anitube.news/video/58075/",
+      "https://www.anitube.news/video/58071/",
+      "https://www.anitube.news/video/58072/",
+      "https://www.anitube.news/video/58074/",
+      "https://www.anitube.news/video/58070/",
+      "https://www.anitube.news/video/58069/",
+      "https://www.anitube.news/video/58068/",
+      "https://www.anitube.news/video/58067/",
+      "https://www.anitube.news/video/58066/",
+      "https://www.anitube.news/video/58065/",
+      "https://www.anitube.news/video/58064/",
+      "https://www.anitube.news/video/58062/",
+      "https://www.anitube.news/video/58060/",
+      "https://www.anitube.news/video/58059/",
+      "https://www.anitube.news/video/58058/",
+      "https://www.anitube.news/video/58063/",
+      "https://www.anitube.news/video/58061/",
+      "https://www.anitube.news/video/58057/",
+      "https://www.anitube.news/video/58056/",
+      "https://www.anitube.news/video/58055/"
+    ]
   },
   "Eat Man ’97": {
     "leg": [
       "https://www.anitube.news/video/58021/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/58022/",
+      "https://www.anitube.news/video/58023/",
+      "https://www.anitube.news/video/58024/",
+      "https://www.anitube.news/video/58025/",
+      "https://www.anitube.news/video/58026/",
+      "https://www.anitube.news/video/58031/",
+      "https://www.anitube.news/video/58030/",
+      "https://www.anitube.news/video/58027/",
+      "https://www.anitube.news/video/58029/",
+      "https://www.anitube.news/video/58028/",
+      "https://www.anitube.news/video/58032/",
+      "https://www.anitube.news/video/58033/"
+    ]
   },
   "Eat Man ’98": {
     "leg": [
       "https://www.anitube.news/video/58007/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/58018/",
+      "https://www.anitube.news/video/58019/",
+      "https://www.anitube.news/video/58017/",
+      "https://www.anitube.news/video/58016/",
+      "https://www.anitube.news/video/58015/",
+      "https://www.anitube.news/video/58014/",
+      "https://www.anitube.news/video/58013/",
+      "https://www.anitube.news/video/58012/",
+      "https://www.anitube.news/video/58011/",
+      "https://www.anitube.news/video/58010/",
+      "https://www.anitube.news/video/58009/",
+      "https://www.anitube.news/video/58008/"
+    ]
   },
   "Ebiten: Kouritsu Ebisugawa Koukou Tenmonbu": {
     "leg": [
       "https://www.anitube.news/video/57996/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/58003/",
+      "https://www.anitube.news/video/58006/",
+      "https://www.anitube.news/video/58005/",
+      "https://www.anitube.news/video/58004/",
+      "https://www.anitube.news/video/58002/",
+      "https://www.anitube.news/video/58001/",
+      "https://www.anitube.news/video/57999/",
+      "https://www.anitube.news/video/58000/",
+      "https://www.anitube.news/video/57998/",
+      "https://www.anitube.news/video/57997/"
+    ]
   },
   "Edens Zero": {
     "leg": [
       "https://www.anitube.news/video/901616/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/933088/",
+      "https://www.anitube.news/video/906485/",
+      "https://www.anitube.news/video/906367/",
+      "https://www.anitube.news/video/906365/",
+      "https://www.anitube.news/video/906101/",
+      "https://www.anitube.news/video/905964/",
+      "https://www.anitube.news/video/905665/",
+      "https://www.anitube.news/video/905522/",
+      "https://www.anitube.news/video/905385/",
+      "https://www.anitube.news/video/905216/",
+      "https://www.anitube.news/video/905116/",
+      "https://www.anitube.news/video/905051/",
+      "https://www.anitube.news/video/905050/",
+      "https://www.anitube.news/video/904577/",
+      "https://www.anitube.news/video/904576/",
+      "https://www.anitube.news/video/903853/",
+      "https://www.anitube.news/video/933089/",
+      "https://www.anitube.news/video/933090/",
+      "https://www.anitube.news/video/933091/",
+      "https://www.anitube.news/video/933092/",
+      "https://www.anitube.news/video/933093/",
+      "https://www.anitube.news/video/933094/",
+      "https://www.anitube.news/video/933095/",
+      "https://www.anitube.news/video/933096/",
+      "https://www.anitube.news/video/933097/"
+    ]
   },
   "EDENS ZERO": {
     "leg": [
       "https://www.anitube.news/video/919719/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/920818/",
+      "https://www.anitube.news/video/920804/",
+      "https://www.anitube.news/video/919721/",
+      "https://www.anitube.news/video/919722/",
+      "https://www.anitube.news/video/919723/",
+      "https://www.anitube.news/video/919724/",
+      "https://www.anitube.news/video/919725/",
+      "https://www.anitube.news/video/919726/",
+      "https://www.anitube.news/video/919727/",
+      "https://www.anitube.news/video/919728/",
+      "https://www.anitube.news/video/919729/",
+      "https://www.anitube.news/video/919730/",
+      "https://www.anitube.news/video/919731/",
+      "https://www.anitube.news/video/919732/",
+      "https://www.anitube.news/video/919733/",
+      "https://www.anitube.news/video/919734/",
+      "https://www.anitube.news/video/919735/",
+      "https://www.anitube.news/video/919736/",
+      "https://www.anitube.news/video/919737/",
+      "https://www.anitube.news/video/919738/",
+      "https://www.anitube.news/video/919739/",
+      "https://www.anitube.news/video/919740/",
+      "https://www.anitube.news/video/919741/",
+      "https://www.anitube.news/video/919742/",
+      "https://www.anitube.news/video/919743/",
+      "https://www.anitube.news/video/919744/"
+    ]
   },
   "Edomae Elf": {
     "leg": [
       "https://www.anitube.news/video/933124/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/933126/",
+      "https://www.anitube.news/video/933127/",
+      "https://www.anitube.news/video/933128/",
+      "https://www.anitube.news/video/933129/",
+      "https://www.anitube.news/video/933130/",
+      "https://www.anitube.news/video/933131/",
+      "https://www.anitube.news/video/933132/",
+      "https://www.anitube.news/video/933133/",
+      "https://www.anitube.news/video/933134/",
+      "https://www.anitube.news/video/933135/",
+      "https://www.anitube.news/video/933136/",
+      "https://www.anitube.news/video/933137/"
+    ]
   },
   "Ef: A Tale of Memories": {
     "leg": [
       "https://www.anitube.news/video/57949/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/57961/",
+      "https://www.anitube.news/video/57960/",
+      "https://www.anitube.news/video/57959/",
+      "https://www.anitube.news/video/57958/",
+      "https://www.anitube.news/video/57957/",
+      "https://www.anitube.news/video/57956/",
+      "https://www.anitube.news/video/57953/",
+      "https://www.anitube.news/video/57952/",
+      "https://www.anitube.news/video/57955/",
+      "https://www.anitube.news/video/57954/",
+      "https://www.anitube.news/video/57951/",
+      "https://www.anitube.news/video/57950/"
+    ]
   },
   "Egao no Taenai Shokuba desu": {
     "leg": [
       "https://www.anitube.news/video/1012761/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/1028988/",
+      "https://www.anitube.news/video/1028300/",
+      "https://www.anitube.news/video/1026577/",
+      "https://www.anitube.news/video/1025593/",
+      "https://www.anitube.news/video/1024737/",
+      "https://www.anitube.news/video/1023756/",
+      "https://www.anitube.news/video/1022420/",
+      "https://www.anitube.news/video/1021403/",
+      "https://www.anitube.news/video/1020302/",
+      "https://www.anitube.news/video/1018786/",
+      "https://www.anitube.news/video/1017125/",
+      "https://www.anitube.news/video/1014018/",
+      "https://www.anitube.news/video/1012763/"
+    ]
   },
   "Eikyuu Shounen: Eternal Boys": {
     "leg": [
       "https://www.anitube.news/video/915388/"
     ],
     "dub": [],
-    "done": false
+    "done": true
   },
   "Eiyuu Kyoushitsu": {
     "leg": [
@@ -5808,140 +6266,553 @@
     "dub": [
       "https://www.anitube.news/video/970383/"
     ],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/919522/",
+      "https://www.anitube.news/video/919523/",
+      "https://www.anitube.news/video/919524/",
+      "https://www.anitube.news/video/919525/",
+      "https://www.anitube.news/video/919526/",
+      "https://www.anitube.news/video/919527/",
+      "https://www.anitube.news/video/919528/",
+      "https://www.anitube.news/video/919529/",
+      "https://www.anitube.news/video/919530/",
+      "https://www.anitube.news/video/919531/",
+      "https://www.anitube.news/video/919532/",
+      "https://www.anitube.news/video/919533/",
+      "https://www.anitube.news/video/970404/",
+      "https://www.anitube.news/video/970403/",
+      "https://www.anitube.news/video/970402/",
+      "https://www.anitube.news/video/970401/",
+      "https://www.anitube.news/video/970400/",
+      "https://www.anitube.news/video/970399/",
+      "https://www.anitube.news/video/970398/",
+      "https://www.anitube.news/video/970397/",
+      "https://www.anitube.news/video/970396/",
+      "https://www.anitube.news/video/970395/",
+      "https://www.anitube.news/video/970394/",
+      "https://www.anitube.news/video/970385/"
+    ]
   },
   "Eiyuuou, Bu wo Kiwameru Tame Tenseisu: Soshite, Sekai Saikyou no Minarai Kishi": {
     "leg": [
       "https://www.anitube.news/video/933199/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/933201/",
+      "https://www.anitube.news/video/933202/",
+      "https://www.anitube.news/video/933203/",
+      "https://www.anitube.news/video/933204/",
+      "https://www.anitube.news/video/933205/",
+      "https://www.anitube.news/video/933206/",
+      "https://www.anitube.news/video/933207/",
+      "https://www.anitube.news/video/933208/",
+      "https://www.anitube.news/video/933209/",
+      "https://www.anitube.news/video/933210/",
+      "https://www.anitube.news/video/933211/",
+      "https://www.anitube.news/video/933212/"
+    ]
   },
   "Eizouken ni wa Te wo Dasuna!": {
     "leg": [
       "https://www.anitube.news/video/888567/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/892100/",
+      "https://www.anitube.news/video/891890/",
+      "https://www.anitube.news/video/891703/",
+      "https://www.anitube.news/video/891511/",
+      "https://www.anitube.news/video/891085/",
+      "https://www.anitube.news/video/890847/",
+      "https://www.anitube.news/video/890419/",
+      "https://www.anitube.news/video/889938/",
+      "https://www.anitube.news/video/889652/",
+      "https://www.anitube.news/video/889275/",
+      "https://www.anitube.news/video/888885/",
+      "https://www.anitube.news/video/888661/"
+    ]
   },
   "El Cazador de la Bruja": {
     "leg": [
       "https://www.anitube.news/video/57920/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/57945/",
+      "https://www.anitube.news/video/57947/",
+      "https://www.anitube.news/video/57946/",
+      "https://www.anitube.news/video/57944/",
+      "https://www.anitube.news/video/57943/",
+      "https://www.anitube.news/video/57942/",
+      "https://www.anitube.news/video/57941/",
+      "https://www.anitube.news/video/57940/",
+      "https://www.anitube.news/video/57939/",
+      "https://www.anitube.news/video/57938/",
+      "https://www.anitube.news/video/57937/",
+      "https://www.anitube.news/video/57936/",
+      "https://www.anitube.news/video/57935/",
+      "https://www.anitube.news/video/57933/",
+      "https://www.anitube.news/video/57931/",
+      "https://www.anitube.news/video/57930/",
+      "https://www.anitube.news/video/57932/",
+      "https://www.anitube.news/video/57929/",
+      "https://www.anitube.news/video/57926/",
+      "https://www.anitube.news/video/57924/",
+      "https://www.anitube.news/video/57928/",
+      "https://www.anitube.news/video/57925/",
+      "https://www.anitube.news/video/57927/",
+      "https://www.anitube.news/video/57923/",
+      "https://www.anitube.news/video/57922/",
+      "https://www.anitube.news/video/57921/"
+    ]
   },
   "elDLIVE": {
     "leg": [
       "https://www.anitube.news/video/57779/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/57791/",
+      "https://www.anitube.news/video/57790/",
+      "https://www.anitube.news/video/57789/",
+      "https://www.anitube.news/video/57788/",
+      "https://www.anitube.news/video/57787/",
+      "https://www.anitube.news/video/57786/",
+      "https://www.anitube.news/video/57785/",
+      "https://www.anitube.news/video/57784/",
+      "https://www.anitube.news/video/57783/",
+      "https://www.anitube.news/video/57782/",
+      "https://www.anitube.news/video/57781/",
+      "https://www.anitube.news/video/57780/"
+    ]
   },
   "Element Hunters": {
     "leg": [
       "https://www.anitube.news/video/57765/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/57776/",
+      "https://www.anitube.news/video/57778/",
+      "https://www.anitube.news/video/57777/",
+      "https://www.anitube.news/video/57775/",
+      "https://www.anitube.news/video/57774/",
+      "https://www.anitube.news/video/57773/",
+      "https://www.anitube.news/video/57772/",
+      "https://www.anitube.news/video/57771/",
+      "https://www.anitube.news/video/57770/",
+      "https://www.anitube.news/video/57769/",
+      "https://www.anitube.news/video/57768/",
+      "https://www.anitube.news/video/57767/",
+      "https://www.anitube.news/video/57766/"
+    ]
   },
   "Elemental Gelade": {
     "leg": [
       "https://www.anitube.news/video/57738/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/57764/",
+      "https://www.anitube.news/video/57763/",
+      "https://www.anitube.news/video/57760/",
+      "https://www.anitube.news/video/57762/",
+      "https://www.anitube.news/video/57761/",
+      "https://www.anitube.news/video/57757/",
+      "https://www.anitube.news/video/57758/",
+      "https://www.anitube.news/video/57756/",
+      "https://www.anitube.news/video/57754/",
+      "https://www.anitube.news/video/57759/",
+      "https://www.anitube.news/video/57755/",
+      "https://www.anitube.news/video/57753/",
+      "https://www.anitube.news/video/57752/",
+      "https://www.anitube.news/video/57751/",
+      "https://www.anitube.news/video/57750/",
+      "https://www.anitube.news/video/57749/",
+      "https://www.anitube.news/video/57748/",
+      "https://www.anitube.news/video/57747/",
+      "https://www.anitube.news/video/57746/",
+      "https://www.anitube.news/video/57745/",
+      "https://www.anitube.news/video/57744/",
+      "https://www.anitube.news/video/57743/",
+      "https://www.anitube.news/video/57742/",
+      "https://www.anitube.news/video/57741/",
+      "https://www.anitube.news/video/57740/",
+      "https://www.anitube.news/video/57739/"
+    ]
   },
   "Elf-san wa Yaserarenai.": {
     "leg": [
       "https://www.anitube.news/video/989643b001"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/993922/",
+      "https://www.anitube.news/video/993545/",
+      "https://www.anitube.news/video/993331/",
+      "https://www.anitube.news/video/993179/",
+      "https://www.anitube.news/video/993177/",
+      "https://www.anitube.news/video/992800/",
+      "https://www.anitube.news/video/992324/",
+      "https://www.anitube.news/video/992321/",
+      "https://www.anitube.news/video/991886/",
+      "https://www.anitube.news/video/991885/",
+      "https://www.anitube.news/video/991884/",
+      "https://www.anitube.news/video/989986/",
+      "https://www.anitube.news/video/989645/"
+    ]
   },
   "Elfen Lied": {
     "leg": [
       "https://www.anitube.news/video/57723/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/57737/",
+      "https://www.anitube.news/video/57735/",
+      "https://www.anitube.news/video/57736/",
+      "https://www.anitube.news/video/57734/",
+      "https://www.anitube.news/video/57733/",
+      "https://www.anitube.news/video/57732/",
+      "https://www.anitube.news/video/57731/",
+      "https://www.anitube.news/video/57730/",
+      "https://www.anitube.news/video/57729/",
+      "https://www.anitube.news/video/57728/",
+      "https://www.anitube.news/video/57727/",
+      "https://www.anitube.news/video/57726/",
+      "https://www.anitube.news/video/57725/",
+      "https://www.anitube.news/video/57724/"
+    ]
   },
   "Elsword: El Lady": {
     "leg": [
       "https://www.anitube.news/video/57720/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/883215/",
+      "https://www.anitube.news/video/883216/",
+      "https://www.anitube.news/video/883214/",
+      "https://www.anitube.news/video/883212/",
+      "https://www.anitube.news/video/883210/",
+      "https://www.anitube.news/video/883213/",
+      "https://www.anitube.news/video/883211/",
+      "https://www.anitube.news/video/883209/",
+      "https://www.anitube.news/video/883208/",
+      "https://www.anitube.news/video/883207/",
+      "https://www.anitube.news/video/57722/",
+      "https://www.anitube.news/video/57721/"
+    ]
   },
   "Endride": {
     "leg": [
       "https://www.anitube.news/video/57694/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/57717/",
+      "https://www.anitube.news/video/57718/",
+      "https://www.anitube.news/video/57716/",
+      "https://www.anitube.news/video/57709/",
+      "https://www.anitube.news/video/57715/",
+      "https://www.anitube.news/video/57713/",
+      "https://www.anitube.news/video/57714/",
+      "https://www.anitube.news/video/57712/",
+      "https://www.anitube.news/video/57710/",
+      "https://www.anitube.news/video/57711/",
+      "https://www.anitube.news/video/57708/",
+      "https://www.anitube.news/video/57707/",
+      "https://www.anitube.news/video/57706/",
+      "https://www.anitube.news/video/57705/",
+      "https://www.anitube.news/video/57704/",
+      "https://www.anitube.news/video/57703/",
+      "https://www.anitube.news/video/57702/",
+      "https://www.anitube.news/video/57701/",
+      "https://www.anitube.news/video/57700/",
+      "https://www.anitube.news/video/57699/",
+      "https://www.anitube.news/video/57698/",
+      "https://www.anitube.news/video/57697/",
+      "https://www.anitube.news/video/57696/",
+      "https://www.anitube.news/video/57695/"
+    ]
   },
   "Enen No Shouboutai": {
     "leg": [
       "https://www.anitube.news/video/880477/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/888318/",
+      "https://www.anitube.news/video/888312/",
+      "https://www.anitube.news/video/888087/",
+      "https://www.anitube.news/video/887919/",
+      "https://www.anitube.news/video/887709/",
+      "https://www.anitube.news/video/887473/",
+      "https://www.anitube.news/video/887178/",
+      "https://www.anitube.news/video/886956/",
+      "https://www.anitube.news/video/886684/",
+      "https://www.anitube.news/video/886475/",
+      "https://www.anitube.news/video/885860/",
+      "https://www.anitube.news/video/882961/",
+      "https://www.anitube.news/video/882437/",
+      "https://www.anitube.news/video/881685/",
+      "https://www.anitube.news/video/881596/",
+      "https://www.anitube.news/video/933226/",
+      "https://www.anitube.news/video/933227/",
+      "https://www.anitube.news/video/933228/",
+      "https://www.anitube.news/video/933229/",
+      "https://www.anitube.news/video/933230/",
+      "https://www.anitube.news/video/933231/",
+      "https://www.anitube.news/video/933232/",
+      "https://www.anitube.news/video/933233/",
+      "https://www.anitube.news/video/933234/"
+    ]
   },
   "Enen no Shouboutai 2": {
     "leg": [
       "https://www.anitube.news/video/933260/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/933262/",
+      "https://www.anitube.news/video/933263/",
+      "https://www.anitube.news/video/933264/",
+      "https://www.anitube.news/video/933265/",
+      "https://www.anitube.news/video/933266/",
+      "https://www.anitube.news/video/933267/",
+      "https://www.anitube.news/video/933268/",
+      "https://www.anitube.news/video/933269/",
+      "https://www.anitube.news/video/933270/",
+      "https://www.anitube.news/video/933271/",
+      "https://www.anitube.news/video/933272/",
+      "https://www.anitube.news/video/933273/",
+      "https://www.anitube.news/video/933274/",
+      "https://www.anitube.news/video/933275/",
+      "https://www.anitube.news/video/933276/",
+      "https://www.anitube.news/video/933277/",
+      "https://www.anitube.news/video/933278/",
+      "https://www.anitube.news/video/933279/",
+      "https://www.anitube.news/video/933280/",
+      "https://www.anitube.news/video/933281/",
+      "https://www.anitube.news/video/933282/",
+      "https://www.anitube.news/video/933283/",
+      "https://www.anitube.news/video/933284/",
+      "https://www.anitube.news/video/933285/"
+    ]
   },
   "Engage Kiss": {
     "leg": [
       "https://www.anitube.news/video/912871/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/914986/",
+      "https://www.anitube.news/video/914853/",
+      "https://www.anitube.news/video/914678/",
+      "https://www.anitube.news/video/914422/",
+      "https://www.anitube.news/video/913993/",
+      "https://www.anitube.news/video/913821/",
+      "https://www.anitube.news/video/913674/",
+      "https://www.anitube.news/video/913558/",
+      "https://www.anitube.news/video/913426/",
+      "https://www.anitube.news/video/913307/",
+      "https://www.anitube.news/video/913172/",
+      "https://www.anitube.news/video/913072/",
+      "https://www.anitube.news/video/912874/"
+    ]
   },
   "Ensemble Stars!": {
     "leg": [
       "https://www.anitube.news/video/881935/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/881945/",
+      "https://www.anitube.news/video/881944/",
+      "https://www.anitube.news/video/881943/",
+      "https://www.anitube.news/video/881942/",
+      "https://www.anitube.news/video/881941/",
+      "https://www.anitube.news/video/881940/",
+      "https://www.anitube.news/video/881939/",
+      "https://www.anitube.news/video/881938/",
+      "https://www.anitube.news/video/886650/",
+      "https://www.anitube.news/video/886365/",
+      "https://www.anitube.news/video/883989/",
+      "https://www.anitube.news/video/882313/",
+      "https://www.anitube.news/video/882312/",
+      "https://www.anitube.news/video/881947/",
+      "https://www.anitube.news/video/881946/",
+      "https://www.anitube.news/video/881937/"
+    ]
   },
   "Ergo Proxy": {
     "leg": [
       "https://www.anitube.news/video/57645/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/933332/",
+      "https://www.anitube.news/video/933333/",
+      "https://www.anitube.news/video/933334/",
+      "https://www.anitube.news/video/933335/",
+      "https://www.anitube.news/video/933336/",
+      "https://www.anitube.news/video/933337/",
+      "https://www.anitube.news/video/933338/",
+      "https://www.anitube.news/video/933339/",
+      "https://www.anitube.news/video/933340/",
+      "https://www.anitube.news/video/933341/",
+      "https://www.anitube.news/video/933342/",
+      "https://www.anitube.news/video/933343/",
+      "https://www.anitube.news/video/933344/",
+      "https://www.anitube.news/video/933345/",
+      "https://www.anitube.news/video/933346/",
+      "https://www.anitube.news/video/933347/",
+      "https://www.anitube.news/video/933348/",
+      "https://www.anitube.news/video/933349/",
+      "https://www.anitube.news/video/933350/",
+      "https://www.anitube.news/video/933351/",
+      "https://www.anitube.news/video/933352/",
+      "https://www.anitube.news/video/933353/",
+      "https://www.anitube.news/video/933354/"
+    ]
   },
   "Eris no Seihai": {
     "leg": [
       "https://www.anitube.news/video/1031714/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/1045720/",
+      "https://www.anitube.news/video/1044560/",
+      "https://www.anitube.news/video/1042668/",
+      "https://www.anitube.news/video/1041236/",
+      "https://www.anitube.news/video/1039415/",
+      "https://www.anitube.news/video/1037616/",
+      "https://www.anitube.news/video/1035434/",
+      "https://www.anitube.news/video/1033644/",
+      "https://www.anitube.news/video/1031716/"
+    ]
   },
   "Eromanga Sensei": {
     "leg": [
       "https://www.anitube.news/video/57609/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/1022807/",
+      "https://www.anitube.news/video/1022805/",
+      "https://www.anitube.news/video/57642/",
+      "https://www.anitube.news/video/57643/",
+      "https://www.anitube.news/video/57641/",
+      "https://www.anitube.news/video/57639/",
+      "https://www.anitube.news/video/57640/",
+      "https://www.anitube.news/video/57636/",
+      "https://www.anitube.news/video/57634/",
+      "https://www.anitube.news/video/57638/",
+      "https://www.anitube.news/video/57635/",
+      "https://www.anitube.news/video/57637/",
+      "https://www.anitube.news/video/57633/",
+      "https://www.anitube.news/video/57632/"
+    ]
   },
   "Etotama: Eto Tamashii": {
     "leg": [
       "https://www.anitube.news/video/57519/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/57566/",
+      "https://www.anitube.news/video/57571/",
+      "https://www.anitube.news/video/57570/",
+      "https://www.anitube.news/video/57565/",
+      "https://www.anitube.news/video/57567/",
+      "https://www.anitube.news/video/57572/",
+      "https://www.anitube.news/video/57569/",
+      "https://www.anitube.news/video/57568/",
+      "https://www.anitube.news/video/57564/",
+      "https://www.anitube.news/video/57563/",
+      "https://www.anitube.news/video/57562/",
+      "https://www.anitube.news/video/57561/"
+    ]
   },
   "Eureka Seven": {
     "leg": [
       "https://www.anitube.news/video/57402/"
     ],
     "dub": [],
-    "done": false
+    "done": true,
+    "done_episodes": [
+      "https://www.anitube.news/video/933381/",
+      "https://www.anitube.news/video/933382/",
+      "https://www.anitube.news/video/933383/",
+      "https://www.anitube.news/video/933384/",
+      "https://www.anitube.news/video/933385/",
+      "https://www.anitube.news/video/933386/",
+      "https://www.anitube.news/video/933387/",
+      "https://www.anitube.news/video/933388/",
+      "https://www.anitube.news/video/933389/",
+      "https://www.anitube.news/video/933390/",
+      "https://www.anitube.news/video/933391/",
+      "https://www.anitube.news/video/933392/",
+      "https://www.anitube.news/video/933393/",
+      "https://www.anitube.news/video/933394/",
+      "https://www.anitube.news/video/933395/",
+      "https://www.anitube.news/video/933396/",
+      "https://www.anitube.news/video/933397/",
+      "https://www.anitube.news/video/933398/",
+      "https://www.anitube.news/video/933399/",
+      "https://www.anitube.news/video/933400/",
+      "https://www.anitube.news/video/933401/",
+      "https://www.anitube.news/video/933402/",
+      "https://www.anitube.news/video/933403/",
+      "https://www.anitube.news/video/933404/",
+      "https://www.anitube.news/video/933405/",
+      "https://www.anitube.news/video/933406/",
+      "https://www.anitube.news/video/933407/",
+      "https://www.anitube.news/video/933408/",
+      "https://www.anitube.news/video/933409/",
+      "https://www.anitube.news/video/933410/",
+      "https://www.anitube.news/video/933411/",
+      "https://www.anitube.news/video/933412/",
+      "https://www.anitube.news/video/933413/",
+      "https://www.anitube.news/video/933414/",
+      "https://www.anitube.news/video/933415/",
+      "https://www.anitube.news/video/933416/",
+      "https://www.anitube.news/video/933417/",
+      "https://www.anitube.news/video/933418/",
+      "https://www.anitube.news/video/933419/",
+      "https://www.anitube.news/video/933420/",
+      "https://www.anitube.news/video/933421/",
+      "https://www.anitube.news/video/933422/",
+      "https://www.anitube.news/video/933423/",
+      "https://www.anitube.news/video/933424/",
+      "https://www.anitube.news/video/933425/",
+      "https://www.anitube.news/video/933426/",
+      "https://www.anitube.news/video/933427/",
+      "https://www.anitube.news/video/933428/",
+      "https://www.anitube.news/video/933429/",
+      "https://www.anitube.news/video/933430/"
+    ]
   },
   "Eureka Seven AO": {
     "leg": [

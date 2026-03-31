@@ -59,7 +59,7 @@ async def favicon():
 
 @app.get("/manifest.json", include_in_schema=False)
 async def get_manifest():
-    return FileResponse("frontend/manifest.json")
+    return FileResponse("frontend/manifest.json", media_type="application/manifest+json")
 
 @app.get("/sw.js", include_in_schema=False)
 async def get_sw():
