@@ -126,8 +126,8 @@ class AniTubeProvider(BaseProvider):
             
             try:
                 # 1. Clique duplo central para tentar matar popups transparentes do Anivideo
+                await page.mouse.click(640, 360); await asyncio.sleep(0.3)
                 await page.mouse.click(640, 360); await asyncio.sleep(0.5)
-                await page.mouse.click(640, 360); await asyncio.sleep(1)
                 
                 # 2. Varredura e injeção de Play() em frames
                 for f in page.frames:
@@ -143,7 +143,8 @@ class AniTubeProvider(BaseProvider):
                 pass
 
             # 3. Espera interceptação de rede (CDN Final do Google ou Mpd)
-            for _ in range(20): 
+            # Reduzido para 10s para garantir resposta rápida no Render
+            for _ in range(10): 
                 if self.extracted_url:
                     logger.info("✅ Encontrado via Rede (CDN Final)")
                     return {"url_stream_original": self.extracted_url, "headers_b64": self.extracted_headers}

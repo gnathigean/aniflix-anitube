@@ -602,22 +602,30 @@ window.tryDirectPlay = function(urlB64) {
         try {
             // Se o player global 'player' existir e não estiver destruído
             if (player && !player.isDisposed()) {
-                console.log("[Player] Usando player existente...");
+                console.log("[Player] Reseting and using existing player for Bypass...");
+                player.pause();
+                player.src(null); 
+                player.load();
             } else {
-                console.log("[Player] Recriando player destruído...");
+                console.log("[Player] Recriating destroyed player for Bypass...");
                 vContainer.innerHTML = '<video id="player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" style="width:100%;height:100%"></video>';
                 player = videojs('player');
             }
             
-            let type = url.toLowerCase().includes('.mp4') ? 'video/mp4' : 'application/x-mpegURL';
-            player.src({ src: url, type: type });
-            player.play().then(() => {
-                const overlay = document.getElementById('stream-loading');
-                if(overlay) overlay.style.display = 'none';
-            }).catch(e => {
-                console.error("[Bypass Error]", e);
-                alert("O Link Direto falhou. Isso acontece por bloqueio de segurança (CORS) do seu navegador ao tentar ler o vídeo sem o nosso Proxy. Tente outro servidor de vídeo.");
-            });
+            // Delay de segurança para o navegador "esquecer" o pedido anterior (Evita AbortError)
+            setTimeout(() => {
+                let type = url.toLowerCase().includes('.mp4') ? 'video/mp4' : 'application/x-mpegURL';
+                player.src({ src: url, type: type });
+                player.play().then(() => {
+                    const overlay = document.getElementById('stream-loading');
+                    if(overlay) overlay.style.display = 'none';
+                }).catch(e => {
+                    if(e.name !== "AbortError") {
+                        console.error("[Bypass Error]", e);
+                        alert("O Link Direto falhou por bloqueio de CORS/Referer no seu navegador. Isso acontece com alguns servidores OVH (ip-51). Tente outro episódio ou aguarde o Proxy normal voltar.");
+                    }
+                });
+            }, 300);
         } catch(err) {
             console.error("[Bypass Critical]", err);
         }

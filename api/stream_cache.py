@@ -112,11 +112,14 @@ async def resolve_stream(ep_id: int, url_origem: str) -> dict:
                 return entry
 
             except asyncio.TimeoutError:
-                logger.error(f"[Cache] ⏱️ Timeout de 45s excedido para ep {ep_id}")
+                logger.error(f"[Cache] ⏱️ Timeout de 25s excedido para ep {ep_id}")
                 raise
             except Exception as e:
                 logger.error(f"[Cache] ❌ Falha na extração para ep {ep_id}: {e}")
                 raise
+            finally:
+                # Limpeza agressiva de memória para o Render Free (512MB)
+                gc.collect()
 
 
 async def resolve_origin_url(anime_titulo: str, ep_numero: int, idioma: str) -> Optional[dict]:
