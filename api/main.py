@@ -240,22 +240,28 @@ async def player(request: Request, episodio_id: int, db: AsyncSession = Depends(
     prog = prog_r.scalar_one_or_none()
     progresso = prog.progresso_segundos if prog else 0
     
-    # Busca IDs do próximo e anterior (mesmo idioma)
+    # Busca IDs do próximo e anterior (mesmo idioma e cross-season)
     prev_id = None
     next_id = None
     if full_anime:
-        # Coleta todos os episódios do anime com o mesmo idioma em ordem
+        # Coleta todos os episódios de todas as temporadas, ordenados por Temporada -> Episódio
         all_eps = []
-        for t in sorted(full_anime.temporadas, key=lambda x: x.numero):
-            for e in sorted(t.episodios, key=lambda x: x.numero):
+        # Ordenamos as temporadas pelo número
+        sorted_seasons = sorted(full_anime.temporadas, key=lambda x: x.numero or 0)
+        for t in sorted_seasons:
+            # Ordenamos os episódios pelo número
+            sorted_eps = sorted(t.episodios, key=lambda x: x.numero or 0)
+            for e in sorted_eps:
                 if e.idioma == episodio.idioma:
                     all_eps.append(e.id)
         
         try:
             curr_idx = all_eps.index(episodio_id)
-            if curr_idx > 0: prev_id = all_eps[curr_idx - 1]
-            if curr_idx < len(all_eps) - 1: next_id = all_eps[curr_idx + 1]
-        except ValueError:
+            if curr_idx > 0: 
+                prev_id = all_eps[curr_idx - 1]
+            if curr_idx < len(all_eps) - 1: 
+                next_id = all_eps[curr_idx + 1]
+        except (ValueError, IndexError):
             pass
 
     resp = templates.TemplateResponse(request=request, name="player.html", context={
