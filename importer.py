@@ -246,7 +246,8 @@ async def fase_importacao(status):
                             ep_url = ep_item['url']
                             if ep_url in data.get("done_episodes", []): continue
                             
-                            status["log_recente"].insert(0, f"⏳ Extraindo: {nome} - Ep {i+1}/{total_eps} ({idioma})")
+                            status["progresso_perc"] = int(((i+1) / total_eps) * 100)
+                            status["log_recente"].insert(0, f"⏳ Extraindo as fontes do {nome} - Ep {i+1}/{total_eps} ({idioma})")
                             status["log_recente"] = status["log_recente"][:15]
                             save_json(STATUS_FILE, status)
                             
@@ -257,11 +258,14 @@ async def fase_importacao(status):
                                 if success:
                                     data.setdefault("done_episodes", []).append(ep_url)
                                     status["sucesso"] += 1
-                                    status["log_recente"].insert(0, f"✅ Sucesso: {nome} - Ep {i+1} salvo!")
+                                    status["log_recente"].insert(0, f"✅ SUCESSO! {nome} - Ep {i+1} importado.")
                                     status["log_recente"] = status["log_recente"][:15]
-                                else: status["erros"] += 1
+                                else: 
+                                    status["erros"] += 1
+                                    status["log_recente"].insert(0, f"❌ ERRO ao salvar no banco o {nome} - Ep {i+1}.")
                             else:
                                 status["erros"] += 1
+                                status["log_recente"].insert(0, f"❌ ERRO de link na fonte Anitube para o {nome} - Ep {i+1}.")
                             
                             save_json(MAP_FILE, map_obras)
                             save_json(STATUS_FILE, status)
@@ -277,6 +281,7 @@ async def fase_importacao(status):
 async def auditoria_integridade(status):
     """Fase 3: Auditoria Profunda (Anti-Furo)."""
     status["fase"] = "Auditoria (Deep Check)"
+    status["progresso_perc"] = 0
     status["log_recente"].insert(0, f"🛡️ Iniciando Auditoria Anti-Furo...")
     save_json(STATUS_FILE, status)
     
@@ -310,22 +315,34 @@ async def auditoria_integridade(status):
             
             if furos:
                 logger.info(f"🧩 FURO DETECTADO em {anime.titulo} ({idioma}): {furos}")
-                status["log_recente"].insert(0, f"🔧 Corrigindo {len(furos)} furos em {anime.titulo}")
+                status["log_recente"].insert(0, f"🔧 INICIANDO CORREÇÃO: Faltam {len(furos)} furos em {anime.titulo}: {furos}")
+                status["log_recente"] = status["log_recente"][:15]
                 save_json(STATUS_FILE, status)
                 
                 # Tenta re-importar os furos
                 for s_url in anime_map[key]:
                     eps_site = await provider.list_episodes_from_page(s_url)
                     eps_site.reverse()
-                    for f_num in furos:
+                    for fix_idx, f_num in enumerate(furos):
+                        status["progresso_perc"] = int(((fix_idx + 1) / len(furos)) * 100)
+                        
                         if f_num <= len(eps_site):
                             ep_meta = eps_site[f_num - 1]
                             logger.info(f"Recuperando: {anime.titulo} Ep {f_num}")
+                            status["log_recente"].insert(0, f"🛠️ Restaurando (Furo) Ep {f_num} de {anime.titulo}...")
+                            status["log_recente"] = status["log_recente"][:15]
+                            save_json(STATUS_FILE, status)
+                            
                             ep_data = await provider.extract_episode(ep_meta['url'])
                             if ep_data:
                                 await save_episode_to_db(ep_data, anime.id, temp1.id, f_num, idioma, ep_meta['url'])
                                 status["sucesso"] += 1
-                                save_json(STATUS_FILE, status)
+                                status["log_recente"].insert(0, f"✅ SUCESSO! Furo Ep {f_num} corrigido e salvo no DB.")
+                            else:
+                                status["log_recente"].insert(0, f"❌ FALHA ao corrigir o Ep {f_num}. Fonte corrompida no servidor de origem.")
+                            
+                            status["log_recente"] = status["log_recente"][:15]
+                            save_json(STATUS_FILE, status)
 
 async def run_daemon():
     """Loop Infinito do Daemon v3.0."""

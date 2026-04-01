@@ -49,8 +49,29 @@ class BaseProvider(ABC):
             
         try:
             page = await self.context.new_page()
-        except Exception:
-            # Fallback se o contexto corrompeu
+        except Exception as e:
+            # Fallback EXTREMO se o navegador ou contexto corrompeu ou foi morto pelo Render/Windows (Target Closed)
+            print(f"[{self.__class__.__name__}] ⚠️ [CRASH DETECTADO] Re-lançando Motor do Playwright! Motivo: {e}")
+            
+            try:
+                if self.browser: await self.browser.close()
+            except: pass
+            
+            # Recria Browser e Contexto absolutos do Zero na mesma chamada
+            self.browser = await self.playwright.chromium.launch(
+                headless=headless,
+                args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--disable-gpu',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--single-process',
+                ]
+            )
             self.context = await self.browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
                 viewport={"width": 1280, "height": 720},
