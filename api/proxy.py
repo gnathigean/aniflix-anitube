@@ -40,8 +40,10 @@ async def proxy_stream(
     headers = {}
     if headers_b64:
         try:
+            # Normaliza para lowercase para facilitar a checagem
             headers_str = base64.urlsafe_b64decode(pad_b64(headers_b64).encode()).decode("utf-8")
-            headers = json.loads(headers_str)
+            raw_headers = json.loads(headers_str)
+            headers = {k.lower(): v for k, v in raw_headers.items()}
         except Exception:
             pass
             
@@ -57,16 +59,18 @@ async def proxy_stream(
         "host", "connection", "accept-encoding", 
         "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform"
     ]
-    headers = {k: v for k, v in headers.items() if k.lower() not in forbidden_headers}
+    headers = {k: v for k, v in headers.items() if k not in forbidden_headers}
 
     # Fallback caso os headers extraídos pelo bot não tenham User-Agent/Referer
     if "user-agent" not in headers:
         headers["user-agent"] = random.choice(user_agents)
+    
     if "referer" not in headers:
-        # Usa o referer do host de origem para CDNs que validam o Referer
+        # Tenta inferir referer do domínio se nada foi passado
         from urllib.parse import urlparse
         parsed = urlparse(url)
         headers["referer"] = f"{parsed.scheme}://{parsed.netloc}/"
+    
     # Accept necessário para alguns CDNs
     if "accept" not in headers:
         headers["accept"] = "*/*"

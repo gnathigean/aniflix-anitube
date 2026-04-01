@@ -28,7 +28,13 @@ class AniTubeProvider(BaseProvider):
         if any(b in url_lower for b in blacklist):
             if "googlevideo" not in url_lower: return False
         
-        # O novo formato deles embute um 'bg.mp4' no próprio anitube.news
+        # BLOQUEIO DE PLAYER INTERNO: links bg.mp4 no anitube.news são páginas PHP, não o vídeo real.
+        if "anitube.news" in url_lower and "bg.mp4" in url_lower: return False
+        
+        # BLOQUEIO DE PLAYER INTERNO: links bg.mp4 no anitube.news são páginas PHP, não o vídeo real.
+        if "anitube.news" in url_lower and "bg.mp4" in url_lower: return False
+        
+        # O novo formato deles embute um 'bg.mp4' no próprio anitube.news (agora ignorado acima)
         if "anitube.news" in url_lower and not (".m3u8" in url_lower or ".mp4" in url_lower): return False
 
         valid_exts = [".m3u8", ".mp4", ".ts", "googlevideo.com/videoplayback"]
@@ -36,6 +42,7 @@ class AniTubeProvider(BaseProvider):
         
         if "anivideo.net" in url_lower: return is_video
 
+        # O frontend cuidará de converter iframes do Blogger/Anitube para a tag <iframe>.
         valid_hosts = ["prd.jwpltx.com", "blogger.com", "googleusercontent.com", "ip-", ".net/", "video.google", "anitube.news"]
         return any(h in url_lower for h in valid_hosts) or is_video
 
@@ -95,39 +102,66 @@ class AniTubeProvider(BaseProvider):
             
             # Estratégia 0: Extração segura via Regex LEVE / HTML Find
             content = await page.content()
-            
-            # Buscar qualquer URL mp4 ou m3u8 que seja de vídeo (evita ReDoS)
-            # Focaremos nas aspas simples ou duplas contendo http e terminando em .mp4 ou .m3u8 antes de continuar as aspas
             matches = re.findall(r'["\'](https?://[^"\']+\.(?:m3u8|mp4)[^"\']*)["\']', content)
-            
+
             import html
+            import json
+            
+            # Captura estado atual (Fidelity Headers)
+            current_cookies = await page.context.cookies()
+            cookie_str = "; ".join([f"{c['name']}={c['value']}" for c in current_cookies])
+            ua = await page.evaluate("navigator.userAgent")
+            fidelity_headers = {"referer": episode_url, "user-agent": ua, "cookie": cookie_str}
+            fidelity_b64 = base64.urlsafe_b64encode(json.dumps(fidelity_headers).encode()).decode()
+
             for stream_url in matches:
                 stream_url = html.unescape(stream_url.replace('\\/', '/'))
-                if self.is_valid_stream(stream_url):
-                    logger.info("✅ Encontrado via Regex Segura")
-                    return {"url_stream_original": stream_url, "headers_b64": None}
+            # Estratégia Principal: Forçar Play em todas as camadas (Frames / Iframes)
+            logger.info("🎬 Tentando ativar o Player em Profundidade...")
+            
+            # Script insano que entra em todo frame (mesmo cross-origin às vezes o playwright permite via main frame)
+            # ou pede para o Playwright ir em cada frame conhecido e disparar clique/play.
+            
+            try:
+                # 1. Clique duplo central para tentar matar popups transparentes do Anivideo
+                await page.mouse.click(640, 360); await asyncio.sleep(0.5)
+                await page.mouse.click(640, 360); await asyncio.sleep(1)
+                
+                # 2. Varredura e injeção de Play() em frames
+                for f in page.frames:
+                    try:
+                        # Se encontrarmos o iframe do Blogger/GoogleVideo, focamos nele e clicamos!
+                        if "blogger.com" in f.url or "anivideo" in f.url:
+                            logger.info(f"🎯 Focando no frame de vídeo: {f.url[:40]}...")
+                            # Tenta dar play via javascript no elemento video (se não houver bloqueio CORS severo)
+                            await f.evaluate("document.querySelectorAll('video').forEach(v => v.play())", timeout=2000)
+                    except:
+                        pass
+            except:
+                pass
 
-            # Ativa o player se necessário
-            await page.mouse.click(640, 360); await asyncio.sleep(2)
-
-            # Espera interceptação de rede (Estratégia Principal)
-            for _ in range(15):
+            # 3. Espera interceptação de rede (CDN Final do Google ou Mpd)
+            for _ in range(20): 
                 if self.extracted_url:
-                    logger.info("✅ Encontrado via Rede")
+                    logger.info("✅ Encontrado via Rede (CDN Final)")
                     return {"url_stream_original": self.extracted_url, "headers_b64": self.extracted_headers}
                 await asyncio.sleep(1)
+                
+                # Resgate instantâneo pela árvore de Frames montada
+                for f in page.frames:
+                    if f.url and "about:blank" not in f.url:
+                        if self.is_valid_stream(f.url) and "anitube.news" not in f.url:
+                            logger.info(f"✅ Encontrado Video Iframe nativo ({f.url[:50]}...)")
+                            return {"url_stream_original": f.url, "headers_b64": fidelity_b64}
 
-            raise Exception("Falha em todas as estratégias de extração.")
+            raise Exception("Falha em todas as estratégias de extração profunda.")
         except Exception as e:
             logger.warning(f"Erro na extração: {e}")
             return None
         finally:
-            # Fechamos apenas o contexto/página para economizar RAM, mas mantemos o Browser vivo
-            # Isso acelera as próximas extrações e evita o overhead de abrir o Chromium
             if page:
-                await page.close()
-            if self.context:
-                await self.context.close()
+                try: await page.close()
+                except: pass
 
     async def find_episode_url(self, series_url: str, episode_number: int, external_page: Optional[Page] = None) -> Optional[str]:
         """Busca a URL de um episódio específico na página da série."""

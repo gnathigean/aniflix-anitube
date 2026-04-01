@@ -319,30 +319,39 @@ async def auditoria_integridade(status):
                 status["log_recente"] = status["log_recente"][:15]
                 save_json(STATUS_FILE, status)
                 
-                # Tenta re-importar os furos
+                # Tenta re-importar os furos (Baixa todas as páginas da série primeiro para não dar IndexError de paginação)
+                all_eps_site = []
                 for s_url in anime_map[key]:
-                    eps_site = await provider.list_episodes_from_page(s_url)
-                    eps_site.reverse()
-                    for fix_idx, f_num in enumerate(furos):
-                        status["progresso_perc"] = int(((fix_idx + 1) / len(furos)) * 100)
+                    try:
+                        eps_site = await provider.list_episodes_from_page(s_url)
+                        for e in eps_site:
+                            if e['url'] not in [x['url'] for x in all_eps_site]:
+                                all_eps_site.append(e)
+                    except: pass
+                
+                # Anitube exibe sempre do Mais Recente para o Mais Velho. Reverte tudo para ordem 1, 2, 3...
+                all_eps_site.reverse()
+                
+                for fix_idx, f_num in enumerate(furos):
+                    status["progresso_perc"] = int(((fix_idx + 1) / len(furos)) * 100)
+                    
+                    if f_num <= len(all_eps_site):
+                        ep_meta = all_eps_site[f_num - 1]
+                        logger.info(f"Recuperando: {anime.titulo} Ep {f_num}")
+                        status["log_recente"].insert(0, f"🛠️ Restaurando Ep {f_num} (Furo) de {anime.titulo}...")
+                        status["log_recente"] = status["log_recente"][:15]
+                        save_json(STATUS_FILE, status)
                         
-                        if f_num <= len(eps_site):
-                            ep_meta = eps_site[f_num - 1]
-                            logger.info(f"Recuperando: {anime.titulo} Ep {f_num}")
-                            status["log_recente"].insert(0, f"🛠️ Restaurando (Furo) Ep {f_num} de {anime.titulo}...")
-                            status["log_recente"] = status["log_recente"][:15]
-                            save_json(STATUS_FILE, status)
-                            
-                            ep_data = await provider.extract_episode(ep_meta['url'])
-                            if ep_data:
-                                await save_episode_to_db(ep_data, anime.id, temp1.id, f_num, idioma, ep_meta['url'])
-                                status["sucesso"] += 1
-                                status["log_recente"].insert(0, f"✅ SUCESSO! Furo Ep {f_num} corrigido e salvo no DB.")
-                            else:
-                                status["log_recente"].insert(0, f"❌ FALHA ao corrigir o Ep {f_num}. Fonte corrompida no servidor de origem.")
-                            
-                            status["log_recente"] = status["log_recente"][:15]
-                            save_json(STATUS_FILE, status)
+                        ep_data = await provider.extract_episode(ep_meta['url'])
+                        if ep_data:
+                            await save_episode_to_db(ep_data, anime.id, temp1.id, f_num, idioma, ep_meta['url'])
+                            status["sucesso"] += 1
+                            status["log_recente"].insert(0, f"✅ SUCESSO! Furo Ep {f_num} recuperado via Supabase.")
+                        else:
+                            status["log_recente"].insert(0, f"❌ FALHA ao corrigir o Ep {f_num}. Fonte corrompida no servidor de origem.")
+                        
+                        status["log_recente"] = status["log_recente"][:15]
+                        save_json(STATUS_FILE, status)
 
 async def run_daemon():
     """Loop Infinito do Daemon v3.0."""

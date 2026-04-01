@@ -76,6 +76,7 @@ class BaseProvider(ABC):
                     '--no-first-run',
                     '--no-zygote',
                     '--single-process',
+                    '--autoplay-policy=no-user-gesture-required',
                 ]
             )
             self.context = await self.browser.new_context(

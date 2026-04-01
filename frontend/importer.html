@@ -16,26 +16,27 @@ main{max-width:900px;margin:0 auto;padding:40px 24px}
 h1{font-size:1.6rem;font-weight:900;margin-bottom:6px}
 .subtitle{color:var(--muted);font-size:.88rem;margin-bottom:32px}
 
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px}
 .stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center}
-.stat-num{font-size:1.8rem;font-weight:900;line-height:1}
-.stat-label{font-size:.7rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
-.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}.teal{color:var(--teal)}
+.stat-num{font-size:1.6rem;font-weight:900;line-height:1;margin-bottom:6px}
+.stat-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}.teal{color:var(--teal)}.blue{color:#3b82f6}.purple{color:#a855f7}
 
 .progress-section{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:24px}
 .progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .progress-title{font-size:.9rem;font-weight:700}
 .phase-badge{font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:999px;background:rgba(20,184,166,.1);color:var(--teal);border:1px solid rgba(20,184,166,0.3)}
-.progress-bar-wrap{background:var(--border);border-radius:999px;height:10px;overflow:hidden;margin-bottom:8px}
-.progress-bar-fill{height:100%;background:linear-gradient(to right,var(--teal),#3b82f6);border-radius:999px;transition:width .5s;width:0%}
-.progress-text{font-size:.78rem;color:var(--muted)}
+.progress-bar-wrap{background:var(--border);border-radius:999px;height:12px;overflow:hidden;margin-bottom:8px}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--purple));border-radius:999px;transition:width 0.8s cubic-bezier(0.4, 0, 0.2, 1);width:0%}
+.progress-text{font-size:.78rem;color:var(--muted);font-weight:600}
 
 .log-box{background:#0a0a0a;border:1px solid var(--border);border-radius:10px;height:400px;overflow-y:auto;padding:16px;font-size:.8rem;font-family:'Consolas','Monaco',monospace;line-height:1.6;color:#a8b4c0}
 .log-box div{margin-bottom:2px;border-bottom:1px solid rgba(255,255,255,0.03)}
+.log-box::-webkit-scrollbar{width:6px}.log-box::-webkit-scrollbar-thumb{background:#333;border-radius:4px}
 
 .btn{padding:12px 24px;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
-.btn-start{background:var(--green);color:#000}
-.btn-start:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(34,197,94,0.3)}
+.btn-start{background:var(--red);color:#fff}
+.btn-start:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(229,9,20,0.3)}
 .btn-disabled{background:var(--border);color:var(--muted);cursor:not-allowed}
 </style>
 </head>
@@ -45,26 +46,27 @@ h1{font-size:1.6rem;font-weight:900;margin-bottom:6px}
   <a href="/">← Voltar ao Catálogo</a>
 </nav>
 <main>
-  <h1>📦 Importador v2.0</h1>
-  <p class="subtitle">Varredura e Importação Serial Garantida (Obra por Obra).</p>
+  <h1>📦 Importador v3.0 Profissional</h1>
+  <p class="subtitle">Varredura e Auditoria Anti-Furos (Sincronizado via Supabase).</p>
   
   <div class="stats">
-    <div class="stat-card"><div class="stat-num teal" id="s-mapped">0</div><div class="stat-label">Obras Mapeadas</div></div>
-    <div class="stat-card"><div class="stat-num green" id="s-ok">0</div><div class="stat-label">Episódios OK</div></div>
-    <div class="stat-card"><div class="stat-num yellow" id="s-skip">0</div><div class="stat-label">Pulados</div></div>
-    <div class="stat-card"><div class="stat-num red" id="s-err">0</div><div class="stat-label">Erros</div></div>
-    <div class="stat-card"><div class="stat-num" id="s-fase-num" style="color:var(--teal)">—</div><div class="stat-label" id="s-fase-label">Aguardando</div></div>
+    <div class="stat-card"><div class="stat-num yellow" id="s-mapped">0</div><div class="stat-label">Cofre de Extração (Catálogo)</div></div>
+    <div class="stat-card"><div class="stat-num green" id="s-db">0</div><div class="stat-label">Obras no Banco (Prontas)</div></div>
+    <div class="stat-card"><div class="stat-num red" id="s-faltantes">0</div><div class="stat-label">Obras Faltantes (Gaps)</div></div>
+    <div class="stat-card"><div class="stat-num blue" id="s-leg">0</div><div class="stat-label">Eps Legendados (Totais)</div></div>
+    <div class="stat-card"><div class="stat-num purple" id="s-dub">0</div><div class="stat-label">Eps Dublados (Totais)</div></div>
+    <div class="stat-card"><div class="stat-num teal" id="s-fase-num" style="color:var(--teal)">—</div><div class="stat-label" id="s-fase-label">Status Global</div></div>
   </div>
   
   <div class="progress-section">
     <div class="progress-header">
-      <span class="progress-title" id="progress-title">Status do Sistema</span>
-      <span class="phase-badge" id="phase-badge">Aguardando Comando</span>
+      <span class="progress-title" id="progress-title">Progresso da Migração</span>
+      <span class="phase-badge" id="phase-badge">Aguardando...</span>
     </div>
     <div class="progress-bar-wrap">
       <div class="progress-bar-fill" id="progress-bar"></div>
     </div>
-    <div class="progress-text" id="progress-text">Clique em iniciar para começar o mapeamento.</div>
+    <div class="progress-text" id="progress-text">Clique em iniciar para acordar o Daemon de Importação.</div>
   </div>
   
   <div style="margin-bottom:24px">
@@ -106,36 +108,39 @@ async function fetchStatus() {
         const s = await res.json();
         
         document.getElementById('s-mapped').textContent = s.obras_mapeadas || 0;
-        document.getElementById('s-ok').textContent = s.sucesso || 0;
-        document.getElementById('s-skip').textContent = s.pulados || 0;
-        document.getElementById('s-err').textContent = s.erros || 0;
+        document.getElementById('s-db').textContent = s.db_obras || 0;
+        document.getElementById('s-faltantes').textContent = s.db_faltantes || 0;
+        document.getElementById('s-leg').textContent = s.db_eps_leg || 0;
+        document.getElementById('s-dub').textContent = s.db_eps_dub || 0;
         
         const phase = s.fase || 'Iniciando';
         document.getElementById('phase-badge').textContent = phase;
         
+        // Se estiver em modo Dormindo, a UI exibe conclusão para o usuário final
+        if(phase.includes("Dormindo")) {
+            document.getElementById('btn-start').disabled = false;
+            document.getElementById('btn-start').className = 'btn btn-start';
+            document.getElementById('btn-start').textContent = '▶ Forçar Novo Ciclo';
+        }
+        
         // Lógica de barra de progresso baseada na fase
-        let perc = s.progresso_perc || 0;
+        let perc = s.db_progresso_perc || 0;
         let text = "Inicializando...";
         
         if(phase.includes("Mapeamento")) {
-            text = `Varrendo catálogo: ${s.idx_leg || '-'} (Leg) | ${s.idx_dub || '-'} (Dub)`;
-            perc = 50; // Valor simbólico enquanto mapeia e não tem totalizador
-        } else if(phase.includes("Importação") || phase.includes("Auditoria")) {
-            text = s.log_recente[0] || `Processando episódios...`; // Mostra também o ep atual se estiver vazio
-        } else if(phase === 'Concluido Total') {
-            text = "Todo o catálogo foi processado com sucesso!";
-            perc = 100;
-            document.getElementById('btn-start').disabled = false;
-            document.getElementById('btn-start').className = 'btn btn-start';
-            document.getElementById('btn-start').textContent = '▶ Reiniciar Processo';
+            text = "Varredura 1/2: Lendo Catálogo Anitube (Em tempo real)...";
+            perc = s.progresso_perc || 10;
+        } else if(phase.includes("Importação")) {
+            text = s.log_recente[0] || `Processando extração massiva e salvando no Supabase...`;
+        } else if(phase.includes("Auditoria")) {
+            text = s.log_recente[0] || `Corrigindo links corrompidos ou furos no banco de dados local...`;
+            perc = s.progresso_perc || 50; // Progresso do Furo atual
+        } else if(phase.includes("Dormindo")) {
+            text = "Aguardando novo ciclo (Serviço Daemon rodando perfeitamente)";
         }
         
         document.getElementById('progress-bar').style.width = perc + '%';
-        if(perc > 0 && !phase.includes("Mapeamento") && phase !== 'Concluido Total') {
-             document.getElementById('progress-text').innerHTML = `<strong>[${perc}%]</strong> ${text}`;
-        } else {
-             document.getElementById('progress-text').textContent = text;
-        }
+        document.getElementById('progress-text').innerHTML = `<strong>[${perc}% GERAL]</strong> ${text}`;
         
         // Logs
         const logBox = document.getElementById('log-box');

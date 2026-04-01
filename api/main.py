@@ -271,7 +271,11 @@ async def player(request: Request, episodio_id: int, db: AsyncSession = Depends(
         "prev_ep_id": prev_id,
         "next_ep_id": next_id
     })
-    set_session_cookie(resp, sid)
+    resp.set_cookie("session_id", sid, max_age=31536000)
+    # Evita que o navegador do usuário faça cache do player.html com código de player defasado
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
     return resp
 
 
@@ -472,8 +476,54 @@ async def import_start():
     )
     return {"ok": True, "pid": _import_proc.pid}
 
+# Cache das métricas do banco para evitar derrubar o Supabase com o Polling agressivo do Cliente (2s)
+_metrics_cache = {}
+_metrics_ts = 0
+
 @app.get("/api/import/status")
-async def import_status():
-    if STATUS_FILE.exists():
-        return json.loads(STATUS_FILE.read_text())
-    return {"fase": "aguardando", "total_eps": 0, "processados": 0, "sucesso": 0, "pulados": 0, "erros": 0, "itens": {}}
+async def import_status(db: AsyncSession = Depends(get_db)):
+    global _metrics_cache, _metrics_ts
+    
+    # 1. Carrega Status base do Arquivo (Disco do Worker)
+    try:
+        if dict_status := json.loads(STATUS_FILE.read_text()) if STATUS_FILE.exists() else None:
+            status = dict_status
+        else:
+            status = {"fase": "aguardando", "total_eps": 0, "processados": 0, "sucesso": 0, "erros": 0}
+    except Exception:
+        status = {"fase": "aguardando", "erros": 0}
+
+    # 2. Carrega Métricas Globais do Banco (Apenas a cada 10segundos para economizar CPU)
+    now = time.time()
+    if now - _metrics_ts > 10:
+        try:
+            from sqlalchemy.sql import func
+            res_total = await db.execute(select(func.count(Anime.id)))
+            res_dub = await db.execute(select(func.sum(Anime.qtd_dub)))
+            res_leg = await db.execute(select(func.sum(Anime.qtd_leg)))
+            
+            _metrics_cache = {
+                "db_obras": res_total.scalar() or 0,
+                "db_eps_dub": res_dub.scalar() or 0,
+                "db_eps_leg": res_leg.scalar() or 0,
+            }
+            _metrics_ts = now
+        except Exception as e:
+            logger.error(f"[API] Falha nas métricas: {e}")
+            pass
+
+    # 3. Mesclar as métricas (Worker + Supabase DB)
+    status.update(_metrics_cache)
+    
+    # 4. Calcular Faltantes e Progresso Baseado em Mapeamento vs Banco
+    mapped = status.get("obras_mapeadas", 0)
+    db_count = status.get("db_obras", 0)
+    
+    rem = max(0, mapped - db_count)
+    if mapped > 0 and db_count > 0:
+        status["db_progresso_perc"] = int((db_count / mapped) * 100)
+    else:
+        status["db_progresso_perc"] = 0
+        
+    status["db_faltantes"] = rem
+    return status
