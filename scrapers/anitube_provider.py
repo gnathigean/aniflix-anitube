@@ -28,14 +28,15 @@ class AniTubeProvider(BaseProvider):
         if any(b in url_lower for b in blacklist):
             if "googlevideo" not in url_lower: return False
         
-        if "anitube.news" in url_lower and ".m3u8" not in url_lower: return False
+        # O novo formato deles embute um 'bg.mp4' no próprio anitube.news
+        if "anitube.news" in url_lower and not (".m3u8" in url_lower or ".mp4" in url_lower): return False
 
         valid_exts = [".m3u8", ".mp4", ".ts", "googlevideo.com/videoplayback"]
         is_video = any(ext in url_lower for ext in valid_exts)
         
         if "anivideo.net" in url_lower: return is_video
 
-        valid_hosts = ["prd.jwpltx.com", "blogger.com", "googleusercontent.com", "ip-", ".net/", "video.google"]
+        valid_hosts = ["prd.jwpltx.com", "blogger.com", "googleusercontent.com", "ip-", ".net/", "video.google", "anitube.news"]
         return any(h in url_lower for h in valid_hosts) or is_video
 
     async def list_episodes_from_page(self, url: str, external_page: Optional[Page] = None) -> List[Dict]:
@@ -92,19 +93,19 @@ class AniTubeProvider(BaseProvider):
             logger.info(f"🔍 Extraindo: {episode_url}")
             await page.goto(episode_url, wait_until="domcontentloaded", timeout=30000)
             
-            # Estratégia 0: Regex Rápido no conteúdo
+            # Estratégia 0: Extração segura via Regex LEVE / HTML Find
             content = await page.content()
-            patterns = [
-                r'["\'](https?://[^\s"\'<>]+(?:index\.m3u8|\.m3u8|\.mp4)[^\s"\'<>]*\.m3u8[^"\']*)["\']',
-                r'(?:file|url|src)["\']\s*[:=]\s*["\'](https?://[^\s"\'<>]+(?:index\.m3u8|\.m3u8|\.mp4)[^\s"\'<>]*)["\']'
-            ]
-            for p in patterns:
-                m = re.search(p, content, re.IGNORECASE)
-                if m:
-                    stream_url = m.group(1).replace('\\/', '/')
-                    if self.is_valid_stream(stream_url):
-                        logger.info("✅ Encontrado via Regex")
-                        return {"url_stream_original": stream_url, "headers_b64": None}
+            
+            # Buscar qualquer URL mp4 ou m3u8 que seja de vídeo (evita ReDoS)
+            # Focaremos nas aspas simples ou duplas contendo http e terminando em .mp4 ou .m3u8 antes de continuar as aspas
+            matches = re.findall(r'["\'](https?://[^"\']+\.(?:m3u8|mp4)[^"\']*)["\']', content)
+            
+            import html
+            for stream_url in matches:
+                stream_url = html.unescape(stream_url.replace('\\/', '/'))
+                if self.is_valid_stream(stream_url):
+                    logger.info("✅ Encontrado via Regex Segura")
+                    return {"url_stream_original": stream_url, "headers_b64": None}
 
             # Ativa o player se necessário
             await page.mouse.click(640, 360); await asyncio.sleep(2)
