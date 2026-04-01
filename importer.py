@@ -165,11 +165,20 @@ async def fase_scan(status):
         await Stealth().apply_stealth_async(page)
         
         alfabeto = list(string.ascii_lowercase) + ['0-9']
+        total_letras = len(alfabeto) * 2
+        letra_count = 0
+        
         for cat_nome, cat_url in categories:
             idioma_tipo = "leg" if "Legendados" in cat_nome else "dub"
             logger.info(f"🔍 Iniciando Scan: {cat_nome}")
             
             for letra in alfabeto:
+                letra_count += 1
+                status["progresso_perc"] = int((letra_count / total_letras) * 100)
+                status.setdefault("log_recente", []).insert(0, f"🔍 Lendo catálogo ({cat_nome}) - Letra [{letra.upper()}]...")
+                status["log_recente"] = status["log_recente"][:15]
+                save_json(STATUS_FILE, status)
+                
                 base_url = f"{cat_url}?letra={letra}"
                 logger.info(f"Letra {letra.upper()}...")
                 try:

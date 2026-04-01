@@ -152,8 +152,11 @@ async function fetchStatus() {
                 else if(l.startsWith("❌")) color = "#ef4444";
                 else if(l.startsWith("🎬")) color = "#3b82f6";
                 else if(l.startsWith("🔍")) color = "#14b8a6";
+                else if(l.startsWith("🛠️") || l.startsWith("🔧")) color = "#f59e0b";
                 return `<div>${l}</div>`.replace(l, `<span style="color:${color}">${l}</span>`);
             }).join('');
+        } else {
+            logBox.innerHTML = '<div style="color:var(--muted)">[Limpando Logs...] Preparando para registro do novo ciclo.</div>';
         }
     } catch(e) {}
 }
