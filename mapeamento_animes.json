@@ -15699,7 +15699,8 @@
       "https://www.anitube.news/video/928730/"
     ],
     "dub": [
-      "https://www.anitube.news/video/37785/"
+      "https://www.anitube.news/video/37785/",
+      "https://www.anitube.news/video/37785z001"
     ],
     "done": true
   },
@@ -25768,5 +25769,45 @@
       "https://www.anitube.news/video/6428/"
     ],
     "done": true
+  },
+  "Baka to Test to Shoukanjuu Ni": {
+    "leg": [
+      "https://www.anitube.news/video/65939/"
+    ],
+    "dub": [],
+    "done": true,
+    "done_episodes": []
+  },
+  "Kagi Hime Monogatari: Eikyuu Alice Rondo": {
+    "leg": [
+      "https://www.anitube.news/video/48031/"
+    ],
+    "dub": [],
+    "done": true,
+    "done_episodes": []
+  },
+  "Shunkashuutou Daikousha: Haru no Mai": {
+    "leg": [
+      "https://www.anitube.news/video/1049986/"
+    ],
+    "dub": [],
+    "done": true,
+    "done_episodes": []
+  },
+  "Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e 4": {
+    "leg": [
+      "https://www.anitube.news/video/1050763/"
+    ],
+    "dub": [],
+    "done": true,
+    "done_episodes": []
+  },
+  "Yuragi-sou No Yuuna-san": {
+    "leg": [
+      "https://www.anitube.news/video/874215/"
+    ],
+    "dub": [],
+    "done": true,
+    "done_episodes": []
   }
 }

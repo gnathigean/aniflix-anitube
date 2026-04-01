@@ -96,7 +96,7 @@ async def resolve_stream(ep_id: int, url_origem: str) -> dict:
             try:
                 provider = _get_shared_provider()
                 # Aumentamos o timeout na chamada do provider para lidar com lentidão do Render
-                result = await asyncio.wait_for(provider.extract_episode(url_origem), timeout=45.0)
+                result = await asyncio.wait_for(provider.extract_episode(url_origem), timeout=60.0)
 
                 if not result or not result.get("url_stream_original"):
                     raise ValueError("Extração retornou resultado vazio ou inválido")

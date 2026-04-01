@@ -26,29 +26,34 @@ if not DATABASE_URL or DATABASE_URL.startswith("sqlite"):
     })
     engine = create_async_engine(DATABASE_URL, **engine_args)
 else:
-    # Ajuste para drivers assíncronos e PgBouncer TRANSACTION MODE (Supabase)
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+    # Ajuste para driver Psycopg v3 (Gold Standard para PgBouncer/Supabase)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
     
-    # IMPORTANTE: Desativar prepared statement cache DIRETAMENTE na URL para o PgBouncer
-    sep = "&" if "?" in DATABASE_URL else "?"
-    if "prepared_statement_cache_size" not in DATABASE_URL:
-        DATABASE_URL += f"{sep}prepared_statement_cache_size=0"
-    if "statement_cache_size" not in DATABASE_URL:
-        DATABASE_URL += "&statement_cache_size=0"
+    # Psycopg v3 lida melhor com Poolers. Vamos remover cache manual de statements.
+    is_pooler = "6543" in DATABASE_URL
 
-    print(f"📦 [DB] Inicializando conexão com: {DATABASE_URL[:40]}...")
-
-    # A desativação do cache de statements é OBRIGATÓRIA para PgBouncer Transaction Mode
-    engine_args.update({
-        "poolclass": NullPool,
-        "connect_args": {
-            "statement_cache_size": 0,
-            "prepared_statement_cache_size": 0,
-            "command_timeout": 60
-        }
-    })
-    engine = create_async_engine(DATABASE_URL, prepared_statement_cache_size=0, **engine_args)
+    if is_pooler:
+        # Modo de Segurança para PgBouncer (Transaction Mode) no Psycopg v3
+        engine_args.update({
+            "poolclass": NullPool,
+            "connect_args": {
+                "prepare_threshold": None, # Desativa prepared statements no Psycopg v3
+                "connect_timeout": 60
+            }
+        })
+        engine = create_async_engine(DATABASE_URL, **engine_args)
+        print(f"📦 [DB] PgBouncer detectado (6543). v4.1: Psycopg v3 (Unprepared Mode).")
+    else:
+        # Modo de Alta Performance para Conexão DIRETA (5432)
+        engine_args.update({
+            "pool_size": 10,
+            "max_overflow": 20,
+            "pool_recycle": 3600,
+            "pool_pre_ping": True,
+        })
+        engine = create_async_engine(DATABASE_URL, **engine_args)
+        print(f"🚀 [DB] Conexão DIRETA detectada (5432). v4.1: Psycopg v3.")
 
 if "sqlite" in DATABASE_URL:
     @event.listens_for(engine.sync_engine, "connect")
@@ -69,10 +74,13 @@ async def init_db():
     db_type = "SUPABASE/POSTGRES" if ("supabase" in DATABASE_URL or "postgres" in DATABASE_URL or "6543" in DATABASE_URL) else "SQLITE LOCAL"
     print(f"[DB] 🗄️ Inicializando banco de dados: {db_type}")
     
-    if db_type == "SQLITE LOCAL":
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-    else:
-        # No Supabase/PgBouncer, pulamos o create_all no startup para evitar introspecção
-        # que causa o erro 'DuplicatePreparedStatementError'.
-        print("[DB] 🛡️ PgBouncer detectado: Pulando create_all (schema já deve existir).")
+    try:
+        if db_type == "SQLITE LOCAL":
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+        else:
+            # No Supabase/PgBouncer, pulamos qualquer comando no startup (inclusive ping)
+            # para evitar que a introspecção de tipos cause erro no PgBouncer.
+            print("[DB] 🛡️ PgBouncer — Silêncio Total: Pulando comandos de controle no startup.")
+    except Exception as e:
+        print(f"⚠️ [DB] Aviso na inicialização (Não-Fatal): {e}")

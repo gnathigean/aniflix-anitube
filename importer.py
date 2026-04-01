@@ -220,6 +220,10 @@ async def fase_importacao(status):
             if data.get("done"): continue
             
             logger.info(f"🎬 Iniciando Obra: {nome}")
+            status.setdefault("log_recente", []).insert(0, f"🎬 Iniciando: {nome}")
+            status["log_recente"] = status["log_recente"][:15]
+            save_json(STATUS_FILE, status)
+            
             aid, tid = await ensure_anime_and_season(nome)
             
             for idioma in ["Legendado", "Dublado"]:
@@ -236,10 +240,15 @@ async def fase_importacao(status):
                         
                         # Inverte para importar em ordem (1, 2, 3...)
                         eps_raw.reverse()
+                        total_eps = len(eps_raw)
                         
                         for i, ep_item in enumerate(eps_raw):
                             ep_url = ep_item['url']
                             if ep_url in data.get("done_episodes", []): continue
+                            
+                            status["log_recente"].insert(0, f"⏳ Extraindo: {nome} - Ep {i+1}/{total_eps} ({idioma})")
+                            status["log_recente"] = status["log_recente"][:15]
+                            save_json(STATUS_FILE, status)
                             
                             # Extrai e salva
                             ep_data = await provider.extract_episode(ep_url)
@@ -248,6 +257,8 @@ async def fase_importacao(status):
                                 if success:
                                     data.setdefault("done_episodes", []).append(ep_url)
                                     status["sucesso"] += 1
+                                    status["log_recente"].insert(0, f"✅ Sucesso: {nome} - Ep {i+1} salvo!")
+                                    status["log_recente"] = status["log_recente"][:15]
                                 else: status["erros"] += 1
                             else:
                                 status["erros"] += 1
