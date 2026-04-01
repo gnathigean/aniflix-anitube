@@ -185,22 +185,51 @@ class AniTubeProvider(BaseProvider):
         finally:
             await self.close_browser()
 
-    async def find_episode_url(self, series_url: str, episode_number: int) -> Optional[str]:
-        page = await self.init_browser()
+    async def find_episode_url(self, series_url: str, episode_number: int, external_page=None) -> Optional[str]:
+        page = external_page or await self.init_browser()
         try:
-            await page.goto(series_url, wait_until="domcontentloaded", timeout=30000)
-            await page.mouse.wheel(0, 1000); await asyncio.sleep(2)
-            eps_raw = await page.evaluate("""() => Array.from(document.querySelectorAll('a')).filter(a => a.href.includes('/video/')).map(a => ({ title: a.title || a.innerText, url: a.href }))""")
-            def extract_num(t):
+            if not external_page:
+                await page.goto(series_url, wait_until="domcontentloaded", timeout=30000)
+            
+            # Múltiplos scrolls para lidar com lazy loading/listas longas
+            for _ in range(3):
+                await page.mouse.wheel(0, 1000)
+                await asyncio.sleep(1)
+
+            # Filtro robusto: aceita /video/ OU títulos que contenham 'Episódio', 'Ep. ', 'Ep '
+            eps_raw = await page.evaluate("""() => 
+                Array.from(document.querySelectorAll('a'))
+                    .filter(a => {
+                        const href = a.href || "";
+                        const title = (a.title || a.innerText || "").toLowerCase();
+                        // Ignora fragmentos (#), links de comentários, e links de gênero
+                        if (href.includes('#') || href.includes('respond') || href.includes('/genero/')) return false;
+                        return (href.includes('/video/') || title.includes('episódio') || title.includes('ep. ') || title.includes('ep '));
+                    })
+                    .map(a => ({ title: a.title || a.innerText, url: a.href }))
+            """)
+
+            def extract_num(t, url=""):
+                t = (t or "").strip()
+                # 1. Tenta extrair do título: 'Episódio 01', 'Ep 01', etc.
                 m = re.search(r'(?:Epis[oó]dio|Ep|Video|Filme|Movie)\s*(\d+)', t, re.IGNORECASE)
                 if m: return int(m.group(1))
-                m = re.search(r'\b(\d+)\b$', t); return int(m.group(1)) if m else None
+                # 2. Tenta extrair número solto no fim de títulos curtos: 'Boruto 293'
+                m = re.search(r'\b(\d+)\b$', t)
+                if m: return int(m.group(1))
+                # 3. Tenta extrair da URL se o título falhar: '.../971441a0/' ou '...-01/'
+                m = re.search(r'(\d+)(?:[ab]|sl\d+)?/?$', url.rstrip('/'))
+                if m: return int(m.group(1))
+                return None
+
             for item in eps_raw:
-                if extract_num(item['title']) == episode_number: return item['url']
-                if extract_num(item['url'].split('/')[-1]) == episode_number: return item['url']
+                found_num = extract_num(item['title'], item['url'])
+                if found_num == episode_number:
+                    return item['url']
             return None
         finally:
-            await self.close_browser()
+            if not external_page:
+                await self.close_browser()
 
     async def search_series(self, title: str) -> dict:
         """
@@ -223,6 +252,8 @@ class AniTubeProvider(BaseProvider):
             title_lower = title.lower()
             for item in items:
                 ititle = item['title'].lower()
+                iurl = item['url'].lower()
+                # Aceita se o título bater OU se for uma URL de catálogo (mesmo com /video/)
                 if title_lower in ititle or ititle in title_lower:
                     if "dublado" in ititle:
                         results["dub"].append(item['url'])

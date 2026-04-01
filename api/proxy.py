@@ -2,9 +2,20 @@ import base64
 import json
 import httpx
 import random
-from fastapi import APIRouter, Request, HTTPException, Response
-from fastapi.responses import StreamingResponse
+import asyncio
+import logging
+from typing import Optional
+from datetime import datetime
+from fastapi import APIRouter, Request, HTTPException, Response, Depends
+from fastapi.responses import StreamingResponse, RedirectResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 import urllib.parse
+
+from database.db import get_db
+from database.models import Episodio
+from api import stream_cache
 
 router = APIRouter()
 
@@ -12,12 +23,19 @@ def pad_b64(s: str) -> str:
     return s + "=" * ((4 - len(s) % 4) % 4)
 
 @router.get("/stream")
-async def proxy_stream(request: Request, url_b64: str, headers_b64: str = ""):
+async def proxy_stream(
+    request: Request, 
+    url_b64: str, 
+    headers_b64: str = "", 
+    episodio_id: Optional[int] = None,
+    retry: int = 0,
+    db: AsyncSession = Depends(get_db)
+):
     # Decodifica a URL origial a partir de base64 urlsafe
     try:
         url = base64.urlsafe_b64decode(pad_b64(url_b64).encode()).decode("utf-8")
     except Exception:
-        raise HTTPException(status_code=400, detail="Erro ao decodificar url_b64")
+        raise HTTPException(status_code=422, detail="Erro ao decodificar url_b64")
 
     headers = {}
     if headers_b64:
@@ -45,7 +63,13 @@ async def proxy_stream(request: Request, url_b64: str, headers_b64: str = ""):
     if "user-agent" not in headers:
         headers["user-agent"] = random.choice(user_agents)
     if "referer" not in headers:
-        headers["referer"] = "https://youtube.googleapis.com/"
+        # Usa o referer do host de origem para CDNs que validam o Referer
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        headers["referer"] = f"{parsed.scheme}://{parsed.netloc}/"
+    # Accept necessário para alguns CDNs
+    if "accept" not in headers:
+        headers["accept"] = "*/*"
 
     # Repassa o cabeçalho Range para suportar Pular Abertura (Seek de vídeo)
     range_header = request.headers.get("Range")
@@ -57,9 +81,9 @@ async def proxy_stream(request: Request, url_b64: str, headers_b64: str = ""):
 
     # Cliente LOCAL para não multiplexar conexões no GoogleVideo
     local_client = httpx.AsyncClient(
-        timeout=httpx.Timeout(connect=15.0, read=45.0, write=15.0, pool=10.0),
+        timeout=httpx.Timeout(connect=12.0, read=60.0, write=20.0, pool=10.0),
         verify=False,
-        http2=False,  # BUG H2 FASTAPI: Causa deadlock no stream de vídeo! HTTP/1.1 suporta 100% após strip do user-agent.
+        http2=False,  # BUG H2 FASTAPI: Causa deadlock no stream de vídeo!
         follow_redirects=True
     )
 
@@ -68,13 +92,19 @@ async def proxy_stream(request: Request, url_b64: str, headers_b64: str = ""):
         req = local_client.build_request("GET", url, headers=headers)
         response = await local_client.send(req, stream=True)
 
+        if response.status_code in [403, 404, 410]:
+            print(f"[Proxy] ⚠️ Link expirou ou foi bloqueado (HTTP {response.status_code}). Notificando frontend via 410.")
+            await response.aclose()
+            await local_client.aclose()
+            raise HTTPException(status_code=410, detail="O link original expirou. Por favor, recarregue a página para re-extrair.")
+
         if response.status_code >= 400:
             error_body = await response.aread()
-            with open("/tmp/proxy_trace.txt", "w") as f:
-                f.write(f"FAILED!\nSTATUS: {response.status_code}\nURL: {url}\nHEADERS SENT: {headers}\nBODY: {error_body.decode('utf-8', 'ignore')}\n")
             print(f"[Proxy] ❌ Erro {response.status_code} no host original: {url[:100]}")
+            await response.aclose()
             await local_client.aclose()
-            raise HTTPException(status_code=502, detail=f"Conteúdo indisponível (HTTP {response.status_code})")
+            # Retorna 410 (Gone) para sinalizar que o link expirou e precisa ser re-extraído
+            raise HTTPException(status_code=410, detail=f"O link expirou ou é inválido (Origem: {response.status_code})")
 
         with open("/tmp/proxy_trace.txt", "w") as f:
             f.write(f"SUCCESS!\nSTATUS: {response.status_code}\nCONTENT-TYPE: {response.headers.get('content-type')}\nHEADERS SENT: {headers}\nRESPONSE HEADERS: {response.headers}\n")
@@ -104,37 +134,37 @@ async def proxy_stream(request: Request, url_b64: str, headers_b64: str = ""):
         
         if is_m3u8:
             try:
-                # playlists m3u8 geralmente são pequenas, aread() é mais seguro que aiter_text() para evitar crash de encoding
                 raw_content = await response.aread()
                 text = raw_content.decode("utf-8", errors="ignore")
-                await response.aclose()
-                await local_client.aclose()
                 
-                # Se o "m3u8" na verdade for um arquivo binário (erro comum de redirecionamento do host)
+                # IMPORTANTE: SEMPRE fechar antes de processar pesado para evitar leaking
+                if not response.is_closed: await response.aclose()
+                if not local_client.is_closed: await local_client.aclose()
+                
                 if not text.strip().startswith("#EXTM3U"):
-                    print(f"[Proxy] ⚠️ M3U8 inválido ou binário detectado em {url[:80]}")
-                    # Reinicia requisição como binário se falhar
                     return Response(content=raw_content, media_type=ctype)
 
-                # Formata playlist com rotas de proxy pro HLS local
                 new_lines = []
                 for line in text.splitlines():
                     if line.startswith("#") or not line.strip():
                         new_lines.append(line)
                     else:
                         if not line.startswith("http"):
+                             # Resolve URLs relativas
                             base = url.rsplit("/", 1)[0]
                             line = f"{base}/{line}"
-                        part_b64 = base64.urlsafe_b64encode(line.encode()).decode()
+                        
+                        part_b64 = base64.urlsafe_b64encode(line.encode()).decode().replace("=", "")
                         part_proxy = f"/stream?url_b64={part_b64}&headers_b64={headers_b64}"
                         new_lines.append(part_proxy)
                         
                 return Response(content="\n".join(new_lines), media_type="application/vnd.apple.mpegurl")
             except Exception as e:
-                print(f"[Proxy] ⚠️ Falha ao processar M3U8: {e}. Retornando como binário.")
-                # Fallback: retorna o conteúdo bruto se falhar o Parse
-                if not 'raw_content' in locals(): raw_content = await response.aread()
-                return Response(content=raw_content, media_type=ctype)
+                print(f"[Proxy] ⚠️ Falha ao processar M3U8: {e}")
+                # Se ainda tivermos o binário, retornamos ele
+                if 'raw_content' in locals() and raw_content:
+                    return Response(content=raw_content, media_type=ctype)
+                raise
 
         else:
             # Arquivo binário (Segmento de Vídeo .ts ou .mp4), retorna via Stream
@@ -154,12 +184,70 @@ async def proxy_stream(request: Request, url_b64: str, headers_b64: str = ""):
                 headers=resp_headers
             )
 
-    except HTTPException:
+    except HTTPException as e:
+        # Se for erro de link expirado (410) ou proibido e tivermos EP_ID, tentamos auto-reparo
+        if e.status_code in [403, 404, 410] and episodio_id and retry < 2:
+            logger_uv = logging.getLogger("uvicorn")
+            logger_uv.warning(f"[Proxy] 🔄 Auto-reparo disparado para EP {episodio_id} após erro {e.status_code} (Tentativa {retry+1})")
+            try:
+                # 1. Busca episódio no DB para ter a URL de origem
+                result = await db.execute(
+                    select(Episodio).where(Episodio.id == episodio_id)
+                )
+                ep = result.scalar_one_or_none()
+                if ep and ep.url_episodio_origem:
+                    # 2. Invalida cache e re-extrai
+                    stream_cache.invalidate(episodio_id)
+                    entry = await stream_cache.resolve_stream(episodio_id, ep.url_episodio_origem)
+                    
+                    # 3. Redireciona para o novo link (incrementando o retry)
+                    new_url_b64 = base64.urlsafe_b64encode(entry["url"].encode()).decode().replace("=", "")
+                    new_headers_b64 = entry["headers"] # Já vem em b64 do resolve_stream
+                    
+                    # Logamos o sucesso
+                    logger_uv.info(f"[Proxy] ✨ Auto-reparo bem sucedido para EP {episodio_id}. Redirecionando...")
+                    return RedirectResponse(url=f"/stream?url_b64={new_url_b64}&headers_b64={new_headers_b64}&episodio_id={episodio_id}&retry={retry + 1}")
+            except Exception as re_err:
+                logger_uv.error(f"[Proxy] ❌ Falha no auto-reparo para EP {episodio_id}: {re_err}")
         raise
+    except (httpx.TimeoutException, httpx.NetworkError) as e:
+        # Erro de conexão/timeout — verifica se vale a pena tentar auto-reparo
+        logger_uv = logging.getLogger("uvicorn")
+        from urllib.parse import urlparse
+        dead_host = urlparse(url).hostname or ""
+        logger_uv.warning(f"[Proxy] ⚠️ Erro de rede/timeout para host '{dead_host}': {type(e).__name__}")
+        
+        if episodio_id and retry < 1:  # Só 1 retry para timeout (host morto = extração retorna mesmo host)
+            logger_uv.warning(f"[Proxy] 🔄 Auto-reparo disparado por erro de rede/timeout no EP {episodio_id} (Tentativa {retry+1})")
+            try:
+                result = await db.execute(select(Episodio).where(Episodio.id == episodio_id))
+                ep = result.scalar_one_or_none()
+                if ep and ep.url_episodio_origem:
+                    stream_cache.invalidate(episodio_id)
+                    entry = await stream_cache.resolve_stream(episodio_id, ep.url_episodio_origem)
+                    new_url_b64 = base64.urlsafe_b64encode(entry["url"].encode()).decode().replace("=", "")
+                    new_headers_b64 = entry["headers"]
+                    return RedirectResponse(url=f"/stream?url_b64={new_url_b64}&headers_b64={new_headers_b64}&episodio_id={episodio_id}&retry={retry + 1}")
+            except Exception as re_err:
+                logger_uv.error(f"[Proxy] ❌ Falha no auto-reparo (rede) para EP {episodio_id}: {re_err}")
+
+        raise HTTPException(
+            status_code=502, 
+            detail=f"O servidor de vídeo original ({dead_host}) está fora do ar. Este anime pode estar temporariamente indisponível na fonte."
+        )
+        
     except Exception as e:
-        print(f"[Proxy] ❌ ERRO CRÍTICO no proxy: {str(e)}")
         import traceback
-        traceback.print_exc()
+        logger_uv = logging.getLogger("uvicorn")
+        err_msg = f"ERROR: {str(e)}\nURL: {url}\n{traceback.format_exc()}"
+        logger_uv.error(f"[Proxy] ❌ ERRO CRÍTICO no proxy: {err_msg}")
+        
+        try:
+            with open("/tmp/proxy_error.log", "a") as f:
+                f.write(f"\n--- {datetime.now()} ---\n{err_msg}\n")
+        except:
+            pass
+            
         if not local_client.is_closed:
              await local_client.aclose()
         raise HTTPException(status_code=500, detail=f"Erro interno no proxy: {str(e)}")

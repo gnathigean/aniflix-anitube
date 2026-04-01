@@ -301,7 +301,7 @@ header .sep { margin: 0 10px; color: #444; }
         <div class="episodes-list-container">
             {% for t in anime.temporadas if anime %}
             <div id="season-{{ t.id }}" class="season-content {% if t.id == episodio.temporada_id %}active{% endif %}">
-                {% for ep in t.episodios %}
+                {% for ep in t.episodios if ep.idioma == episodio.idioma %}
                 <div class="ep-item {% if ep.id == episodio.id %}current{% endif %}" onclick="location.href='/player/{{ ep.id }}'">
                     <div class="ep-number">{{ ep.numero }}</div>
                     <div class="ep-info">
@@ -388,7 +388,8 @@ async function resolveAndPlay() {
         msgEl.textContent = data.from_cache ? '\u26a1 Cache hit!' : '\u2705 Stream resolvido!';
 
         // Monta URL do proxy com parâmetros corretos
-        const proxyUrl = `/stream?url_b64=${encodeURIComponent(data.url_b64)}&headers_b64=${encodeURIComponent(data.headers_b64 || '')}`;
+        const proxyUrl = `/stream?url_b64=${encodeURIComponent(data.url_b64)}&headers_b64=${encodeURIComponent(data.headers_b64 || '')}&episodio_id=${EP_ID}`;
+        let retryCount = 0;
 
         // Injeta source no Video.js com tipo correto
         player.src({ src: proxyUrl, type: mediaType });
@@ -402,25 +403,48 @@ async function resolveAndPlay() {
         });
 
         // Erro no player: tenta re-extrair automaticamente se possível
-        player.one('error', async () => {
-            console.warn('[Player] Erro no stream, tentando re-extração...');
+        player.on('error', async () => {
+            const error = player.error();
+            console.warn('[Player] Erro detectado no stream:', error);
+            
+            if (retryCount >= 2) {
+                console.error('[Player] Limite de re-tentativas atingido.');
+                if (loadingEl) {
+                    loadingEl.style.display = 'flex';
+                    loadingEl.innerHTML = `
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="#e50914"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <p style="color:#e50914;font-size:1rem;font-weight:700;">Servidor Fora do Ar</p>
+                        <p style="color:#888;font-size:0.8rem;max-width:300px;text-align:center;">O servidor de vídeo de origem deste anime está indisponível. Isso é um problema externo e geralmente se resolve em algumas horas ou dias.</p>
+                        <button onclick="location.reload()" style="margin-top:10px;padding:8px 20px;background:#e50914;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.9rem;">Tentar Novamente</button>
+                    `;
+                }
+                return;
+            }
+
+            retryCount++;
+            console.log(`[Player] Tentativa ${retryCount} de re-extração devido a falha no link...`);
+            
             await fetch(`/api/cache/invalidate/${EP_ID}`, { method: 'POST' }).catch(() => {});
 
             if (data.can_reextract) {
-                // Tem url_episodio_origem → re-extrai via Playwright
                 if (loadingEl) {
                     loadingEl.style.display = 'flex';
                     loadingEl.innerHTML = `
                         <div style="width:48px;height:48px;border:3px solid #333;border-top-color:#e50914;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-                        <p style="color:#aaa;font-size:0.9rem;font-weight:600;">Re-extraindo stream...</p>
-                        <p style="color:#555;font-size:0.75rem;">Isso pode levar até 30s</p>
+                        <p style="color:#aaa;font-size:0.9rem;font-weight:600;">Link expirado. Re-extraindo...</p>
+                        <p style="color:#555;font-size:0.75rem;">Isso acontece quando o servidor de origem troca as chaves.</p>
                     `;
                 }
                 try {
+                    // Aguarda o servidor processar a limpeza do cache e iniciar a extração
                     const reRes = await fetch(`/api/reextract-stream/${EP_ID}`, { method: 'POST' });
                     const reData = await reRes.json();
+                    
                     if (reRes.ok && reData.url_b64) {
-                        const newProxy = `/stream?url_b64=${encodeURIComponent(reData.url_b64)}&headers_b64=${encodeURIComponent(reData.headers_b64 || '')}`;
+                        // Pequeno delay para garantir que o backend/DB sincronizou
+                        await new Promise(r => setTimeout(r, 1500));
+                        
+                        const newProxy = `/stream?url_b64=${encodeURIComponent(reData.url_b64)}&headers_b64=${encodeURIComponent(reData.headers_b64 || '')}&episodio_id=${EP_ID}`;
                         player.src({ src: newProxy, type: mediaType });
                         player.ready(() => {
                             if (loadingEl) loadingEl.style.display = 'none';
@@ -428,19 +452,16 @@ async function resolveAndPlay() {
                         });
                         return;
                     }
-                } catch(e) { /* fallback para tela de erro */ }
+                } catch(e) { console.error('Falha na re-extração:', e); }
             }
 
-            // Sem url_episodio_origem ou re-extração falhou
+            // Exibe erro final se não conseguir recuperar
             if (loadingEl) {
                 loadingEl.style.display = 'flex';
-                const msg = data.can_reextract
-                    ? 'Re-extração falhou. O Anitube pode estar bloqueando temporariamente.'
-                    : 'A URL do CDN expirou. Este episódio precisa ser reimportado para funcionar.';
                 loadingEl.innerHTML = `
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="#e50914"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                     <p style="color:#e50914;font-size:1rem;font-weight:700;">Stream Indisponível</p>
-                    <p style="color:#888;font-size:0.8rem;max-width:260px;text-align:center;">${msg}</p>
+                    <p style="color:#888;font-size:0.8rem;max-width:260px;text-align:center;">O servidor de origem está demorando muito para responder.</p>
                     <button onclick="resolveAndPlay()" style="margin-top:10px;padding:8px 20px;background:#e50914;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.9rem;">Tentar Novamente</button>
                 `;
             }

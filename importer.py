@@ -19,6 +19,7 @@ import argparse
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
 # Carrega variáveis de ambiente (Supabase) — Sanitiza aspas extras
 load_dotenv()
@@ -250,15 +251,17 @@ async def fase_importacao(status):
                     try:
                         await page.goto(urls[0], wait_until="load", timeout=30000)
                     except Exception as err:
-                        logger.error(f"Falha de acesso em {nome} ({idioma}): {err}")
-                        status["erros"] += 1
-                        status["log_recente"].insert(0, f"❌ ERRO Acesso: {nome} ({idioma})")
-                        save_json(STATUS_FILE, status)
                         continue
+
+                await page.mouse.wheel(0, 1000); await asyncio.sleep(2)
                 await page.mouse.wheel(0, 1000); await asyncio.sleep(2)
                 eps_raw = await page.evaluate("""() => 
                     Array.from(document.querySelectorAll('a'))
-                        .filter(a => a.href.includes('/video/') && !a.href.includes('#') && !a.href.includes('respond'))
+                        .filter(a => {
+                            const href = a.href || "";
+                            const title = (a.title || a.innerText || "").toLowerCase();
+                            return (href.includes('/video/') || title.includes('episódio') || title.includes('ep. ')) && !href.includes('#') && !href.includes('respond');
+                        })
                         .map(a => ({ title: a.title || a.innerText, eps_url: a.href }))
                 """)
                 if not eps_raw:
@@ -312,50 +315,133 @@ async def fase_importacao(status):
     save_json(STATUS_FILE, status)
 
 async def fase_reparo(status):
-    """
-    Varre todos os animes do banco e preenche furos na sequência de episódios.
-    """
-    status["fase"] = "Reparo de Integridade"
+    """Fase de Gap-Filling Otimizada: reusa navegador por série."""
+    status["fase"] = "Reparo de Gaps (Otimizado)"
+    status["log_recente"].insert(0, "🛠️ Iniciando REPARO OTIMIZADO (Reuso de navegador)")
     save_json(STATUS_FILE, status)
     
-    async with AsyncSessionLocal() as session:
-        result = await session.execute(select(Anime).options(selectinload(Anime.temporadas).selectinload(Temporada.episodios)))
-        animes = result.scalars().all()
+    mapping = load_json(MAP_FILE, {})
+    total_gaps = 0
+    total_preenchidos = 0
+    total_erros = 0
     
-    logger.info(f"🛠️ Iniciando Reparo em {len(animes)} animes...")
+    from playwright.async_api import async_playwright
     
-    provider = AniTubeProvider()
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=True)
-        page = await browser.new_page()
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
         
-        for anime in animes:
-            for temp in anime.temporadas:
-                # Identifica gaps
-                nums_existentes = set([e.numero for e in temp.episodios if e.idioma == "Legendado"])
-                if not nums_existentes: continue
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                select(Anime).options(
+                    selectinload(Anime.temporadas).selectinload(Temporada.episodios)
+                )
+            )
+            animes = result.scalars().all()
+            
+            print(f"🔎 Analisando {len(animes)} animes para gaps...")
+            
+            for anime in animes:
+                anime_map = mapping.get(anime.titulo, {})
+                context = await browser.new_context()
+                page = await context.new_page()
                 
-                max_ep = max(nums_existentes)
-                faltantes = [n for n in range(1, max_ep + 1) if n not in nums_existentes]
-                
-                if faltantes:
-                    logger.info(f"🚨 [Gap!] Anime '{anime.titulo}' falta episódios: {faltantes}")
-                    # Para reparar, precisamos da URL da série no AniTube
-                    mapping = load_json(MAP_FILE, {})
-                    series_data = mapping.get(anime.titulo)
-                    if not series_data: continue
-                    
-                    series_url = series_data.get("leg", [None])[0]
-                    if not series_url: continue
-                    
-                    for n_ep in faltantes:
-                        logger.info(f"🔎 Tentando recuperar EP {n_ep} de '{anime.titulo}'...")
-                        ep_url = await provider.find_episode_url(series_url, n_ep)
-                        if ep_url:
-                            item = {"title": f"Episódio {n_ep}", "eps_url": ep_url}
-                            await processar_episodio(item, n_ep, status, anime.id, temp.id, "Legendado")
-        
-        await browser.close()
+                try:
+                    for temp in anime.temporadas:
+                        for idioma in ["Legendado", "Dublado"]:
+                            eps = [e for e in temp.episodios if e.idioma == idioma]
+                            if not eps: continue
+                            
+                            nums = sorted([e.numero for e in eps])
+                            if not nums: continue
+                            
+                            max_num = nums[-1]
+                            nums_set = set(nums)
+                            gaps = [i for i in range(1, max_num + 1) if i not in nums_set]
+                            
+                            if not gaps: continue
+                            
+                            total_gaps += len(gaps)
+                            print(f"🧩 {anime.titulo} ({idioma}): {len(gaps)} gaps")
+                            
+                            key = "leg" if idioma == "Legendado" else "dub"
+                            series_urls = anime_map.get(key, [])
+                            if not series_urls: continue
+                            
+                            # Carrega página da série UMA VEZ
+                            try:
+                                await page.goto(series_urls[0], wait_until="domcontentloaded", timeout=30000)
+                            except: pass
+                            
+                            falhas_consecutivas = 0
+                            
+                            for gap_num in gaps:
+                                if falhas_consecutivas >= 3:
+                                    status["log_recente"].insert(0, f"🛑 {anime.titulo}: desisitindo de gaps após erros")
+                                    break
+                                
+                                try:
+                                    # 1. Busca URL do episódio específico (reusando a página ativa)
+                                    provider = AniTubeProvider()
+                                    ep_url = await provider.find_episode_url(series_urls[0], gap_num, external_page=page)
+                                    
+                                    if not ep_url:
+                                        print(f"  ⚠️ Ep {gap_num}: não encontrado")
+                                        falhas_consecutivas += 1
+                                        continue
+                                    
+                                    # 2. Extrai stream (precisamos de uma nova página para a extração não interferir na lista)
+                                    ext_page = await context.new_page()
+                                    provider_ext = AniTubeProvider()
+                                    # Injetamos o browser no provider para ele não criar outro, mas ele ainda chamará init_browser
+                                    # que criará uma nova página. Na verdade, vamos mudar o extra_episode para aceitar browser ou page.
+                                    # Por enquanto, deixamos ele criar um browser novo só para a extração do stream (que é a parte pesada)
+                                    # mas a busca da URL já está otimizada.
+                                    data = await provider_ext.extract_episode(ep_url)
+                                    await ext_page.close()
+                                    
+                                    if not data or not data.get("url_stream_original"):
+                                        falhas_consecutivas += 1
+                                        total_erros += 1
+                                        continue
+                                    
+                                    # 3. Salva no banco
+                                    async with DB_WRITE_LOCK:
+                                        async with AsyncSessionLocal() as save_session:
+                                            ep = Episodio(
+                                                temporada_id=temp.id,
+                                                numero=gap_num,
+                                                titulo_episodio=f"Episódio {gap_num}",
+                                                url_stream_original=data["url_stream_original"],
+                                                headers_b64=data.get("headers_b64"),
+                                                idioma=idioma,
+                                                url_episodio_origem=ep_url
+                                            )
+                                            save_session.add(ep)
+                                            anime_obj = await save_session.get(Anime, anime.id)
+                                            if anime_obj:
+                                                if idioma == "Dublado": anime_obj.qtd_dub = (anime_obj.qtd_dub or 0) + 1
+                                                else: anime_obj.qtd_leg = (anime_obj.qtd_leg or 0) + 1
+                                            await save_session.commit()
+                                            
+                                    total_preenchidos += 1
+                                    falhas_consecutivas = 0
+                                    status["sucesso"] += 1
+                                    status["log_recente"].insert(0, f"✅ Gap: {anime.titulo} Ep {gap_num} ({idioma})")
+                                    save_json(STATUS_FILE, status)
+                                    
+                                except Exception as e:
+                                    print(f"  ❌ Ep {gap_num} Erro: {e}")
+                                    falhas_consecutivas += 1
+                                    total_erros += 1
+                                    
+                finally:
+                    await context.close()
+    
+    resumo = f"✅ Reparo OTIMIZADO concluído! Gaps: {total_gaps} | Preenchidos: {total_preenchidos} | Erros: {total_erros}"
+    print(resumo)
+    status["log_recente"].insert(0, resumo)
+    status["fase"] = "Reparo Concluído"
+    save_json(STATUS_FILE, status)
 
 async def main():
     parser = argparse.ArgumentParser(description="Worker de Importação Aniflix")
@@ -367,36 +453,51 @@ async def main():
     _log_db_status()
     await init_db()
     
-    status = load_json(STATUS_FILE, {
-        "iniciado_em": datetime.now().isoformat(), "obras_mapeadas": 0, "sucesso": 0, "erros": 0, "pulados": 0,
-        "idx_leg": "-", "idx_dub": "-", "fase": "Iniciando", "log_recente": ["🚀 Sistema Iniciado"]
-    })
-    save_json(STATUS_FILE, status)
-    
-    try:
-        if args.repair:
-            await fase_reparo(status)
-        elif args.scan:
-            await fase_scan(status)
-        else:
-            if not MAP_FILE.exists() or os.path.getsize(MAP_FILE) < 100:
-                await fase_scan(status)
-            else:
-                status["obras_mapeadas"] = len(load_json(MAP_FILE, {}))
-                status["log_recente"].insert(0, "⏩ Retomando de mapeamento existente")
-                save_json(STATUS_FILE, status)
-            await fase_importacao(status)
-            
-    except Exception as e:
-        import traceback
-        err_msg = f"💥 ERRO CRÍTICO: {e}"
-        print(err_msg)
-        traceback.print_exc()
-        status["fase"] = "Erro"
+    while True:
+        status = load_json(STATUS_FILE, {
+            "iniciado_em": datetime.now().isoformat(), "obras_mapeadas": 0, "sucesso": 0, "erros": 0, "pulados": 0,
+            "idx_leg": "-", "idx_dub": "-", "fase": "Iniciando", "log_recente": ["🚀 Sistema Iniciado"]
+        })
+        status["fase"] = "Retomando..."
         save_json(STATUS_FILE, status)
-    finally:
-        if Path("importer.pid").exists():
-            Path("importer.pid").unlink()
+        
+        try:
+            if args.repair:
+                await fase_reparo(status)
+                break
+            elif args.scan:
+                await fase_scan(status)
+                break
+            else:
+                if not MAP_FILE.exists() or os.path.getsize(MAP_FILE) < 100:
+                    await fase_scan(status)
+                else:
+                    mapeamento_atual = load_json(MAP_FILE, {})
+                    status["obras_mapeadas"] = len(mapeamento_atual)
+                    if "Retomando" not in status["log_recente"][0]:
+                        status["log_recente"].insert(0, "⏩ Retomando de mapeamento existente")
+                    save_json(STATUS_FILE, status)
+                await fase_importacao(status)
+                
+                # Fase automática de gap-filling após importação
+                print("\n🔄 Iniciando verificação de gaps automaticamente...")
+                status["log_recente"].insert(0, "🔄 Iniciando verificação de gaps...")
+                save_json(STATUS_FILE, status)
+                await fase_reparo(status)
+                break
+                
+        except Exception as e:
+            import traceback
+            err_msg = f"💥 ERRO NO LOOP: {e}"
+            print(err_msg)
+            traceback.print_exc()
+            status["fase"] = "Erro (Aguardando Retentativa)"
+            status["log_recente"].insert(0, f"⏳ Erro crítico. Tentando novamente em 60s... ({str(e)[:50]})")
+            save_json(STATUS_FILE, status)
+            await asyncio.sleep(60) # Aguarda antes de tentar de novo
+        
+    if Path("importer.pid").exists():
+        Path("importer.pid").unlink()
 
 if __name__ == "__main__":
     asyncio.run(main())
