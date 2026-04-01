@@ -22,25 +22,27 @@ print(f"📦 [DB] Inicializando conexão com: {DATABASE_URL[:25]}...")
 
 engine_args = {
     "echo": False,
-    "pool_pre_ping": True,  # Verifica se a conexão está ativa antes de usar
-    "pool_size": 20,         # Aumentado para o Daemon
-    "max_overflow": 40,
-    "pool_recycle": 60,      # Recycle rápido para conexões instáveis do Supabase
 }
 
 if "sqlite" in DATABASE_URL:
-    engine_args["connect_args"] = {"timeout": 30}
     from sqlalchemy.pool import StaticPool
-    engine_args["poolclass"] = StaticPool
+    engine_args.update({
+        "poolclass": StaticPool,
+        "connect_args": {"timeout": 30}
+    })
 else:
     # Para Supabase com PgBouncer (Transaction mode), NullPool é o mais seguro
-    # para evitar erros de Prepared Statements.
+    # para evitar erros de 'Prepared Statements' e 'Too many clients'.
     from sqlalchemy.pool import NullPool
-    engine_args["poolclass"] = NullPool
-    engine_args["connect_args"] = {
-        "prepared_statement_cache_size": 0,
-        "command_timeout": 60
-    }
+    engine_args.update({
+        "poolclass": NullPool,
+        "pool_pre_ping": True,
+        "pool_recycle": 60,
+        "connect_args": {
+            "prepared_statement_cache_size": 0,
+            "command_timeout": 60
+        }
+    })
 
 engine = create_async_engine(DATABASE_URL, **engine_args)
 
