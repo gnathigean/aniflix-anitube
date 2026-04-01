@@ -515,17 +515,26 @@ async function resolveAndPlay() {
             const error = player.error();
             console.warn('[Player] Erro detectado no stream:', error);
             
-            if (retryCount >= 2) {
-                console.error('[Player] Limite de re-tentativas atingido.');
+            // Lógica de Bypass: Se falhar via Proxy, oferecemos o link direto (alguns hosts permitem)
+            const showBypassUI = (msg, detail) => {
+                const urlDecoded = decodeBase64Url(data.url_b64);
                 if (loadingEl) {
                     loadingEl.style.display = 'flex';
                     loadingEl.innerHTML = `
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="#e50914"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                        <p style="color:#e50914;font-size:1rem;font-weight:700;">Servidor Fora do Ar</p>
-                        <p style="color:#888;font-size:0.8rem;max-width:300px;text-align:center;">O servidor de vídeo de origem deste anime está indisponível. Isso é um problema externo e geralmente se resolve em algumas horas ou dias.</p>
-                        <button onclick="location.reload()" style="margin-top:10px;padding:8px 20px;background:#e50914;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.9rem;">Tentar Novamente</button>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <p style="color:#f59e0b;font-size:1rem;font-weight:700;">${msg}</p>
+                        <p style="color:#888;font-size:0.8rem;max-width:300px;text-align:center;">${detail}</p>
+                        <div style="display:flex;gap:10px;margin-top:15px;">
+                            <button onclick="resolveAndPlay()" style="padding:10px 15px;background:#333;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.85rem;">🔄 Tentar Novamente</button>
+                            <button onclick="tryDirectPlay('${btoa(urlDecoded)}')" style="padding:10px 15px;background:#e50914;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.85rem;">🚀 Assistir via Link Direto (Bypass)</button>
+                        </div>
+                        <p style="color:#555;font-size:0.7rem;margin-top:10px;max-width:250px;text-align:center;">O modo Bypass pula o servidor Render e carrega o vídeo direto da fonte no seu IP.</p>
                     `;
                 }
+            };
+
+            if (retryCount >= 2) {
+                showBypassUI("Servidor Ocupado ou Bloqueado", "O link via Proxy falhou repetidamente. O servidor original pode estar bloqueando o Render ou o tráfego está congestionado.");
                 return;
             }
 
@@ -538,55 +547,67 @@ async function resolveAndPlay() {
                 if (loadingEl) {
                     loadingEl.style.display = 'flex';
                     loadingEl.innerHTML = `
-                        <div style="width:48px;height:48px;border:3px solid #333;border-top-color:#e50914;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-                        <p style="color:#aaa;font-size:0.9rem;font-weight:600;">Link expirado. Re-extraindo...</p>
-                        <p style="color:#555;font-size:0.75rem;">Isso acontece quando o servidor de origem troca as chaves.</p>
+                        <div style="width:40px;height:40px;border:3px solid #333;border-top-color:#e50914;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                        <p style="color:#aaa;font-size:0.9rem;font-weight:600;margin-top:10px;">Link expirado. Tentando nova rota...</p>
                     `;
                 }
                 try {
-                    // Aguarda o servidor processar a limpeza do cache e iniciar a extração
                     const reRes = await fetch(`/api/reextract-stream/${EP_ID}`, { method: 'POST' });
-                    const reData = await reRes.json();
+                    if(reRes.status === 503 || reRes.status === 502) {
+                         showBypassUI("Render Offline/Timeout", "O servidor Render demorou muito para processar o vídeo (Timeout). Recomenda-se usar o botão de Bypass abaixo.");
+                         return;
+                    }
                     
+                    const reData = await reRes.json();
                     if (reRes.ok && reData.url_b64) {
-                        // Pequeno delay para garantir que o backend/DB sincronizou
-                        await new Promise(r => setTimeout(r, 1500));
-                        
+                        await new Promise(r => setTimeout(r, 1000));
                         const newProxy = `/stream?url_b64=${encodeURIComponent(reData.url_b64)}&headers_b64=${encodeURIComponent(reData.headers_b64 || '')}&episodio_id=${EP_ID}`;
                         player.src({ src: newProxy, type: mediaType });
-                        player.ready(() => {
-                            if (loadingEl) loadingEl.style.display = 'none';
-                            player.play().catch(() => {});
-                        });
+                        player.play().catch(() => {});
+                        if (loadingEl) loadingEl.style.display = 'none';
                         return;
                     }
                 } catch(e) { console.error('Falha na re-extração:', e); }
             }
 
-            // Exibe erro final se não conseguir recuperar
-            if (loadingEl) {
-                loadingEl.style.display = 'flex';
-                loadingEl.innerHTML = `
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="#e50914"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                    <p style="color:#e50914;font-size:1rem;font-weight:700;">Stream Indisponível</p>
-                    <p style="color:#888;font-size:0.8rem;max-width:260px;text-align:center;">O servidor de origem está demorando muito para responder.</p>
-                    <button onclick="resolveAndPlay()" style="margin-top:10px;padding:8px 20px;background:#e50914;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.9rem;">Tentar Novamente</button>
-                `;
-            }
+            showBypassUI("Stream Indisponível (Proxy)", "Não foi possível carregar o fluxo via servidor central. Tente o modo direto.");
         });
 
     } catch (err) {
         console.error('[Player] Falha ao resolver stream:', err);
-        if (loadingEl) {
-            loadingEl.innerHTML = `
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="#e50914"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                <p style="color:#e50914;font-size:1rem;font-weight:700;">Stream Indisponível</p>
-                <p style="color:#888;font-size:0.8rem;max-width:260px;text-align:center;">${err.message}</p>
-                <button onclick="resolveAndPlay()" style="margin-top:10px;padding:8px 20px;background:#e50914;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.9rem;">Tentar Novamente</button>
-            `;
-        }
     }
 }
+
+// Função de Bypass para o usuário
+window.tryDirectPlay = function(urlB64) {
+    const url = atob(urlB64);
+    console.log("[Player] 🚀 Iniciando BYPASS para:", url);
+    const vContainer = document.querySelector('.video-container');
+    const loadingEl = document.getElementById('player-loading');
+    
+    if(loadingEl) loadingEl.style.display = 'none';
+    
+    // Se for um link de Iframe conhecido (ou se o usuário forçar bypass em algo que parece página)
+    if(/(blogger\.com|anitube\.news|anivideo|google\.com\/file)/i.test(url) && !/\.(mp4|m3u8)/i.test(url)) {
+        const frame = document.createElement('iframe');
+        frame.src = url;
+        frame.allowFullscreen = true;
+        frame.setAttribute("allow", "autoplay; fullscreen");
+        frame.style.width = '100%'; frame.style.height = '100%'; frame.style.border = 'none';
+        frame.style.position = 'absolute'; frame.style.top = '0'; frame.style.left = '0'; frame.style.zIndex = '50';
+        vContainer.innerHTML = '';
+        vContainer.appendChild(frame);
+    } else {
+        // Tenta injetar no VideoJS mas SEM o proxy (Direto)
+        // Nota: Alguns m3u8 falharão por CORS se não houver proxy, mas outros carregarão!
+        const player = videojs('video-player');
+        let type = url.includes('.mp4') ? 'video/mp4' : 'application/x-mpegURL';
+        player.src({ src: url, type: type });
+        player.play().catch(e => {
+            alert("O Link Direto também falhou (Provavelmente bloqueio de CORS no seu navegador). Tente outro episódio ou aguarde a manutenção do servidor original.");
+        });
+    }
+};
 
 // Inicia a resolução imediatamente ao carregar a página
 resolveAndPlay();

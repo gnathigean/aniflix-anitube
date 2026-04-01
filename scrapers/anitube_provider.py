@@ -78,7 +78,9 @@ class AniTubeProvider(BaseProvider):
             logger.error(f"Erro ao listar episódios de {url}: {e}")
             return []
         finally:
-            if not external_page: await self.close_browser()
+            if not external_page and page:
+                try: await page.context.close()
+                except: pass
 
     async def extract_episode(self, episode_url: str) -> Optional[dict]:
         """Extração de stream com múltiplas estratégias (Rede -> Regex -> Iframe)."""
@@ -160,8 +162,12 @@ class AniTubeProvider(BaseProvider):
             return None
         finally:
             if page:
-                try: await page.close()
-                except: pass
+                try:
+                    context = page.context
+                    await page.close()
+                    await context.close()
+                except:
+                    pass
 
     async def find_episode_url(self, series_url: str, episode_number: int, external_page: Optional[Page] = None) -> Optional[str]:
         """Busca a URL de um episódio específico na página da série."""
