@@ -424,6 +424,10 @@ async function resolveAndPlay() {
     const msgEl    = document.getElementById('loading-msg');
 
     try {
+        if(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            console.warn('[Player] 🛠️ Executando em MODO LOCAL. Bloqueios de IP (ip-51) podem ocorrer no seu provedor de internet. Use o Proxy ou Bypass se falhar.');
+        }
+        
         msgEl.textContent = 'Resolvendo stream...';
         let res = await fetch(`/api/resolve-stream/${EP_ID}`);
         let data = await res.json();
@@ -524,11 +528,12 @@ async function resolveAndPlay() {
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
                         <p style="color:#f59e0b;font-size:1rem;font-weight:700;">${msg}</p>
                         <p style="color:#888;font-size:0.8rem;max-width:300px;text-align:center;">${detail}</p>
-                        <div style="display:flex;gap:10px;margin-top:15px;">
+                        <div style="display:flex;gap:10px;margin-top:15px;flex-wrap:wrap;justify-content:center;">
                             <button onclick="resolveAndPlay()" style="padding:10px 15px;background:#333;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.85rem;">🔄 Tentar Novamente</button>
                             <button onclick="tryDirectPlay('${btoa(urlDecoded)}')" style="padding:10px 15px;background:#e50914;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.85rem;">🚀 Assistir via Link Direto (Bypass)</button>
+                            ${'{{ url_episodio_origem }}' ? `<button onclick="tryIframe('{{ url_episodio_origem }}')" style="padding:10px 15px;background:#6366f1;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.85rem;width:100%;">🌐 Abrir no Player Original (Iframe)</button>` : ''}
                         </div>
-                        <p style="color:#555;font-size:0.7rem;margin-top:10px;max-width:250px;text-align:center;">O modo Bypass pula o servidor Render e carrega o vídeo direto da fonte no seu IP.</p>
+                        <p style="color:#555;font-size:0.7rem;margin-top:10px;max-width:250px;text-align:center;">O modo Bypass pula o servidor Render. O modo Iframe carrega o site de origem.</p>
                     `;
                 }
             };
@@ -578,6 +583,26 @@ async function resolveAndPlay() {
     }
 }
 
+// Função de Fallback Total: Carrega a página original em um iframe
+window.tryIframe = function(url) {
+    console.log("[Player] 🌐 Iniciando MODO IFRAME para:", url);
+    const vContainer = document.querySelector('.video-container');
+    const loadingEl = document.getElementById('player-loading'); // Se houver
+    if(loadingEl) loadingEl.style.display = 'none';
+    
+    vContainer.innerHTML = ''; 
+    const frame = document.createElement('iframe');
+    frame.src = url;
+    frame.allowFullscreen = true;
+    frame.setAttribute("allow", "autoplay; fullscreen");
+    frame.style.width = '100%'; frame.style.height = '100%'; frame.style.border = 'none';
+    frame.style.position = 'absolute'; frame.style.top = '0'; frame.style.left = '0'; frame.style.zIndex = '100';
+    vContainer.appendChild(frame);
+    
+    const overlay = document.getElementById('stream-loading');
+    if(overlay) overlay.style.display = 'none';
+};
+
 // Função de Bypass para o usuário — Tenta carregar o vídeo IGNOORANDO o servidor Render
 window.tryDirectPlay = function(urlB64) {
     const url = atob(urlB64);
@@ -614,8 +639,12 @@ window.tryDirectPlay = function(urlB64) {
             
             // Delay de segurança para o navegador "esquecer" o pedido anterior (Evita AbortError)
             setTimeout(() => {
-                let type = 'application/x-mpegURL';
-                if(url.toLowerCase().includes('.mp4') || url.includes('googlevideo.com') || url.includes('redirector.gvt1.com')) {
+                let type = 'video/mp4'; // Default
+                
+                // Prioridade absoluta para HLS se houver .m3u8 no link
+                if(url.toLowerCase().includes('.m3u8')) {
+                    type = 'application/x-mpegURL';
+                } else if(url.toLowerCase().includes('.mp4') || url.includes('googlevideo.com') || url.includes('redirector.gvt1.com')) {
                     type = 'video/mp4';
                 }
                 
