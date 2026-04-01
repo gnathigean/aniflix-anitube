@@ -375,8 +375,8 @@ async def fase_reparo(status):
                             falhas_consecutivas = 0
                             
                             for gap_num in gaps:
-                                if falhas_consecutivas >= 3:
-                                    status["log_recente"].insert(0, f"🛑 {anime.titulo}: desisitindo de gaps após erros")
+                                if falhas_consecutivas >= 5: # Aumentado para 5 para ser mais resiliente
+                                    status["log_recente"].insert(0, f"⚠️ {anime.titulo}: muitas falhas, pulando para próxima temporada")
                                     break
                                 
                                 try:
@@ -430,9 +430,18 @@ async def fase_reparo(status):
                                     save_json(STATUS_FILE, status)
                                     
                                 except Exception as e:
+                                    err_str = str(e).lower()
                                     print(f"  ❌ Ep {gap_num} Erro: {e}")
-                                    falhas_consecutivas += 1
-                                    total_erros += 1
+                                    
+                                    # Se o erro for "não encontrado" no provedor, registramos mas não contamos como falha técnica grave
+                                    if "não encontrado" in err_str or "404" in err_str:
+                                        status["log_recente"].insert(0, f"ℹ️ {anime.titulo} Ep {gap_num}: não existe no AniTube")
+                                    else:
+                                        falhas_consecutivas += 1
+                                        total_erros += 1
+                                    
+                                    # Pequena pausa para não ser bloqueado após erro
+                                    await asyncio.sleep(2)
                                     
                 finally:
                     await context.close()
@@ -490,11 +499,14 @@ async def main():
             import traceback
             err_msg = f"💥 ERRO NO LOOP: {e}"
             print(err_msg)
-            traceback.print_exc()
+            # Evita spam se for apenas erro de conexão do browser
+            if "Connection closed" not in str(e):
+                traceback.print_exc()
+            
             status["fase"] = "Erro (Aguardando Retentativa)"
-            status["log_recente"].insert(0, f"⏳ Erro crítico. Tentando novamente em 60s... ({str(e)[:50]})")
+            status["log_recente"].insert(0, f"⏳ Conexão instável. Tentando novamente em 60s... ({str(e)[:50]})")
             save_json(STATUS_FILE, status)
-            await asyncio.sleep(60) # Aguarda antes de tentar de novo
+            await asyncio.sleep(60)
         
     if Path("importer.pid").exists():
         Path("importer.pid").unlink()

@@ -211,14 +211,18 @@ class AniTubeProvider(BaseProvider):
 
             def extract_num(t, url=""):
                 t = (t or "").strip()
-                # 1. Tenta extrair do título: 'Episódio 01', 'Ep 01', etc.
-                m = re.search(r'(?:Epis[oó]dio|Ep|Video|Filme|Movie)\s*(\d+)', t, re.IGNORECASE)
+                # 1. Tenta extrair do título explicitamente: 'Episódio 01', 'Ep 01', etc.
+                m = re.search(r'(?:Epis[oó]dio|Ep\.|Ep|Video|Filme|Movie)\s*(\d+)', t, re.IGNORECASE)
                 if m: return int(m.group(1))
-                # 2. Tenta extrair número solto no fim de títulos curtos: 'Boruto 293'
-                m = re.search(r'\b(\d+)\b$', t)
-                if m: return int(m.group(1))
-                # 3. Tenta extrair da URL se o título falhar: '.../971441a0/' ou '...-01/'
-                m = re.search(r'(\d+)(?:[ab]|sl\d+)?/?$', url.rstrip('/'))
+                # 2. Tenta extrair número isolado se houver apenas um padrão numérico claro: 'Naruto 220'
+                # Evita pegar anos (2024) ou IDs gigantes
+                m_nums = re.findall(r'\b(\d{1,4})\b', t)
+                if m_nums:
+                    # Se houver apenas um número, ou o último número parece ser o episódio
+                    return int(m_nums[-1])
+                # 3. Tenta extrair da URL se o título falhar: '.../971441/' ou '...-01/'
+                url_clean = url.rstrip('/')
+                m = re.search(r'(\d+)(?:[ab]|sl\d+)?$', url_clean)
                 if m: return int(m.group(1))
                 return None
 

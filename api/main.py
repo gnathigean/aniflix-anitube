@@ -240,10 +240,30 @@ async def player(request: Request, episodio_id: int, db: AsyncSession = Depends(
     prog = prog_r.scalar_one_or_none()
     progresso = prog.progresso_segundos if prog else 0
     
+    # Busca IDs do próximo e anterior (mesmo idioma)
+    prev_id = None
+    next_id = None
+    if full_anime:
+        # Coleta todos os episódios do anime com o mesmo idioma em ordem
+        all_eps = []
+        for t in sorted(full_anime.temporadas, key=lambda x: x.numero):
+            for e in sorted(t.episodios, key=lambda x: x.numero):
+                if e.idioma == episodio.idioma:
+                    all_eps.append(e.id)
+        
+        try:
+            curr_idx = all_eps.index(episodio_id)
+            if curr_idx > 0: prev_id = all_eps[curr_idx - 1]
+            if curr_idx < len(all_eps) - 1: next_id = all_eps[curr_idx + 1]
+        except ValueError:
+            pass
+
     resp = templates.TemplateResponse(request=request, name="player.html", context={
         "episodio": episodio, 
         "anime": full_anime, 
-        "progresso": progresso
+        "progresso": progresso,
+        "prev_ep_id": prev_id,
+        "next_ep_id": next_id
     })
     set_session_cookie(resp, sid)
     return resp

@@ -142,6 +142,41 @@ header .sep { margin: 0 10px; color: #444; }
 .ep-meta { font-size: 0.75rem; color: #888; }
 .now-playing { font-size: 0.65rem; font-weight: 900; color: var(--netflix-red); letter-spacing: 1px; }
 
+/* Botões de Navegação no Player */
+.player-controls-nav {
+    display: flex; gap: 15px; margin-top: 15px; pointer-events: auto;
+}
+.btn-nav {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3);
+    color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer;
+    font-size: 0.9rem; font-weight: 700; transition: 0.2s; text-decoration: none;
+    display: flex; align-items: center; gap: 8px;
+}
+.btn-nav:hover { background: rgba(255,255,255,0.2); border-color: white; }
+.btn-nav.disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+
+/* Botão Pular Intro - Posicionado acima da barra de controles */
+#skip-intro {
+    position: absolute; bottom: 85px; right: 4% ;
+    background: rgba(0,0,0,0.8) ; border: 1px solid rgba(255,255,255,0.4) ; color: white ;
+    padding: 10px 20px ; border-radius: 4px ; font-weight: 700 ; font-size: 0.9rem ;
+    cursor: pointer ; z-index: 100 ; display: none ; transition: 0.2s ;
+    text-transform: uppercase; letter-spacing: 1px;
+}
+#skip-intro:hover { background: rgba(255,255,255,0.1); border-color: white; }
+
+/* Overlay Auto-play */
+#autoplay-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.9);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 200; text-align: center;
+}
+#autoplay-overlay h4 { font-size: 1.5rem; margin-bottom: 20px; color: #fff; }
+.autoplay-timer { font-size: 4rem; font-weight: 900; color: var(--netflix-red); margin-bottom: 30px; }
+.autoplay-btns { display: flex; gap: 20px; }
+.btn-autoplay-now { background: white; color: black; padding: 12px 30px; border-radius: 4px; font-weight: 800; border: none; cursor: pointer; }
+.btn-autoplay-cancel { background: rgba(255,255,255,0.1); color: white; padding: 12px 30px; border-radius: 4px; font-weight: 800; border: 1px solid #555; cursor: pointer; }
+
 /* Custom Scrollbar for Drawer */
 .episodes-list-container::-webkit-scrollbar { width: 4px; }
 .episodes-list-container::-webkit-scrollbar-track { background: transparent; }
@@ -274,10 +309,35 @@ header .sep { margin: 0 10px; color: #444; }
                 <p>{{ episodio.temporada.titulo_temporada }} — Episódio {{ episodio.numero }}</p>
             </div>
             
+            <div class="player-controls-nav">
+                <a href="/player/{{ prev_ep_id }}" class="btn-nav {% if not prev_ep_id %}disabled{% endif %}">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                    Anterior
+                </a>
+                <a href="/player/{{ next_ep_id }}" class="btn-nav {% if not next_ep_id %}disabled{% endif %}">
+                    Próximo
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                </a>
+            </div>
+
             <button class="btn-episodes-toggle" onclick="toggleEpisodes()">
                 <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
                 Episódios
             </button>
+        </div>
+
+        <!-- Botão Pular Intro -->
+        <button id="skip-intro" onclick="skipIntro()">PULAR ABERTURA</button>
+
+        <!-- Overlay Autoplay -->
+        <div id="autoplay-overlay">
+            <p style="color:#aaa; font-size: 0.9rem; margin-bottom: 5px;">PRÓXIMO EPISÓDIO EM</p>
+            <div class="autoplay-timer" id="autoplay-countdown">5</div>
+            <h4>Próximo: Episódio {{ next_ep_id if next_ep_id else '?' }}</h4>
+            <div class="autoplay-btns">
+                <button class="btn-autoplay-now" onclick="location.href='/player/{{ next_ep_id }}'">REPRODUZIR AGORA</button>
+                <button class="btn-autoplay-cancel" onclick="cancelAutoplay()">CANCELAR</button>
+            </div>
         </div>
     </div>
 
@@ -518,6 +578,65 @@ setInterval(async () => {
         });
     }
 }, 10000);
+
+// ─── Lógica de Pular Intro e Auto-play ────────────────
+const NEXT_EP_ID = {{ next_ep_id if next_ep_id else 'null' }};
+const PREV_EP_ID = {{ prev_ep_id if prev_ep_id else 'null' }};
+let autoplayCancelled = false;
+let autoplayTimer = null;
+
+function skipIntro() {
+    player.currentTime(player.currentTime() + 85);
+    document.getElementById('skip-intro').style.display = 'none';
+}
+
+function cancelAutoplay() {
+    autoplayCancelled = true;
+    if (autoplayTimer) clearInterval(autoplayTimer);
+    document.getElementById('autoplay-overlay').style.display = 'none';
+}
+
+player.on('timeupdate', () => {
+    const cur = player.currentTime();
+    const btnSkip = document.getElementById('skip-intro');
+    
+    // Mostra botão de pular intro entre 5s e 2 minutos
+    if (cur > 5 && cur < 120) {
+        btnSkip.style.display = 'block';
+    } else {
+        btnSkip.style.display = 'none';
+    }
+});
+
+player.on('ended', () => {
+    if (NEXT_EP_ID && !autoplayCancelled) {
+        const overlay = document.getElementById('autoplay-overlay');
+        const countdownEl = document.getElementById('autoplay-countdown');
+        overlay.style.display = 'flex';
+        
+        let timeLeft = 5;
+        autoplayTimer = setInterval(() => {
+            timeLeft--;
+            countdownEl.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(autoplayTimer);
+                location.href = `/player/${NEXT_EP_ID}`;
+            }
+        }, 1000);
+    }
+});
+
+// Atalhos de teclado
+document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    
+    if (e.key.toLowerCase() === 'n' && NEXT_EP_ID) {
+        location.href = `/player/${NEXT_EP_ID}`;
+    }
+    if (e.key.toLowerCase() === 'p' && PREV_EP_ID) {
+        location.href = `/player/${PREV_EP_ID}`;
+    }
+});
 </script>
 </body>
 </html>
