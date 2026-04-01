@@ -578,7 +578,7 @@ async function resolveAndPlay() {
     }
 }
 
-// Função de Bypass para o usuário
+// Função de Bypass para o usuário — Tenta carregar o vídeo IGNOORANDO o servidor Render
 window.tryDirectPlay = function(urlB64) {
     const url = atob(urlB64);
     console.log("[Player] 🚀 Iniciando BYPASS para:", url);
@@ -587,25 +587,40 @@ window.tryDirectPlay = function(urlB64) {
     
     if(loadingEl) loadingEl.style.display = 'none';
     
-    // Se for um link de Iframe conhecido (ou se o usuário forçar bypass em algo que parece página)
+    // Se for um link de Iframe conhecido ou se o usuário forçar bypass em algo que não é vídeo direto
     if(/(blogger\.com|anitube\.news|anivideo|google\.com\/file)/i.test(url) && !/\.(mp4|m3u8)/i.test(url)) {
+        vContainer.innerHTML = ''; // Limpa tudo (incluindo o player videojs)
         const frame = document.createElement('iframe');
         frame.src = url;
         frame.allowFullscreen = true;
         frame.setAttribute("allow", "autoplay; fullscreen");
         frame.style.width = '100%'; frame.style.height = '100%'; frame.style.border = 'none';
         frame.style.position = 'absolute'; frame.style.top = '0'; frame.style.left = '0'; frame.style.zIndex = '50';
-        vContainer.innerHTML = '';
         vContainer.appendChild(frame);
     } else {
-        // Tenta injetar no VideoJS mas SEM o proxy (Direto)
-        // Nota: Alguns m3u8 falharão por CORS se não houver proxy, mas outros carregarão!
-        const player = videojs('video-player');
-        let type = url.includes('.mp4') ? 'video/mp4' : 'application/x-mpegURL';
-        player.src({ src: url, type: type });
-        player.play().catch(e => {
-            alert("O Link Direto também falhou (Provavelmente bloqueio de CORS no seu navegador). Tente outro episódio ou aguarde a manutenção do servidor original.");
-        });
+        // Tenta injetar no VideoJS mas SEM o proxy (Link Direto do Host)
+        try {
+            // Se o player global 'player' existir e não estiver destruído
+            if (player && !player.isDisposed()) {
+                console.log("[Player] Usando player existente...");
+            } else {
+                console.log("[Player] Recriando player destruído...");
+                vContainer.innerHTML = '<video id="player" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" style="width:100%;height:100%"></video>';
+                player = videojs('player');
+            }
+            
+            let type = url.toLowerCase().includes('.mp4') ? 'video/mp4' : 'application/x-mpegURL';
+            player.src({ src: url, type: type });
+            player.play().then(() => {
+                const overlay = document.getElementById('stream-loading');
+                if(overlay) overlay.style.display = 'none';
+            }).catch(e => {
+                console.error("[Bypass Error]", e);
+                alert("O Link Direto falhou. Isso acontece por bloqueio de segurança (CORS) do seu navegador ao tentar ler o vídeo sem o nosso Proxy. Tente outro servidor de vídeo.");
+            });
+        } catch(err) {
+            console.error("[Bypass Critical]", err);
+        }
     }
 };
 
