@@ -35,10 +35,8 @@ else:
     # para evitar erros de 'Prepared Statements' e 'Too many clients'.
     from sqlalchemy.pool import NullPool
     engine_args.update({
-        "poolclass": NullPool,
-        "pool_pre_ping": True,
-        "pool_recycle": 60,
         "connect_args": {
+            "statement_cache_size": 0,
             "prepared_statement_cache_size": 0,
             "command_timeout": 60
         }
