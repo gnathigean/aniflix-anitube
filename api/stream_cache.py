@@ -58,46 +58,64 @@ def get_cached(ep_id: int) -> Optional[dict]:
     return None
 
 
+# Semáforo global para limitar extrações simultâneas (Max 1 no Render Free)
+_extraction_semaphore = asyncio.Semaphore(1)
+_shared_provider: Optional["AniTubeProvider"] = None
+
+def _get_shared_provider():
+    global _shared_provider
+    if not _shared_provider:
+        from scrapers.anitube_provider import AniTubeProvider
+        _shared_provider = AniTubeProvider()
+    return _shared_provider
+
 async def resolve_stream(ep_id: int, url_origem: str) -> dict:
     """
     Resolve a URL de stream on-demand.
-    Thread-safe: não faz extração duplicada para o mesmo ep_id.
+    Thread-safe e Concurrency-limited: apenas uma extração por vez no servidor.
     """
     # 1. Verifica cache
     cached = get_cached(ep_id)
     if cached:
         return cached
 
-    # 2. Adquire lock para evitar extrações paralelas do mesmo ep
+    # 2. Adquire lock do episódio (evita que o mesmo EP seja extraído por 2 reqs)
     lock = _get_lock(ep_id)
     async with lock:
-        # Double-check após o lock (outro coroutine pode ter preenchido o cache)
+        # Double-check após o lock
         cached = get_cached(ep_id)
         if cached:
             return cached
 
-        logger.info(f"[Cache] 🔄 Extraindo stream on-demand para ep {ep_id}: {url_origem[:60]}...")
+        logger.info(f"[Cache] 🔄 Aguardando vez para extrair ep {ep_id}...")
+        
+        # 3. Adquire SEMÁFORO GLOBAL (evita que QUALQUER extração rode em paralelo, poupando RAM)
+        async with _extraction_semaphore:
+            logger.info(f"[Cache] 🚀 Iniciando extração para ep {ep_id}: {url_origem[:60]}...")
+            
+            try:
+                provider = _get_shared_provider()
+                # Aumentamos o timeout na chamada do provider para lidar com lentidão do Render
+                result = await asyncio.wait_for(provider.extract_episode(url_origem), timeout=45.0)
 
-        try:
-            from scrapers.anitube_provider import AniTubeProvider
-            provider = AniTubeProvider()
-            result = await provider.extract_episode(url_origem)
+                if not result or not result.get("url_stream_original"):
+                    raise ValueError("Extração retornou resultado vazio ou inválido")
 
-            if not result or not result.get("url_stream_original"):
-                raise ValueError("Extração retornou resultado vazio")
+                entry = {
+                    "url": result["url_stream_original"],
+                    "headers": result.get("headers_b64", ""),
+                    "ts": time.time(),
+                }
+                _cache[ep_id] = entry
+                logger.info(f"[Cache] ✅ Stream salvo no cache para ep {ep_id}")
+                return entry
 
-            entry = {
-                "url": result["url_stream_original"],
-                "headers": result.get("headers_b64", ""),
-                "ts": time.time(),
-            }
-            _cache[ep_id] = entry
-            logger.info(f"[Cache] ✅ Stream salvo no cache para ep {ep_id}")
-            return entry
-
-        except Exception as e:
-            logger.error(f"[Cache] ❌ Falha na extração para ep {ep_id}: {e}")
-            raise
+            except asyncio.TimeoutError:
+                logger.error(f"[Cache] ⏱️ Timeout de 45s excedido para ep {ep_id}")
+                raise
+            except Exception as e:
+                logger.error(f"[Cache] ❌ Falha na extração para ep {ep_id}: {e}")
+                raise
 
 
 async def resolve_origin_url(anime_titulo: str, ep_numero: int, idioma: str) -> Optional[dict]:

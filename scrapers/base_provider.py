@@ -16,15 +16,24 @@ class BaseProvider(ABC):
         self._anivideo_iframe_url: str | None = None
 
     async def init_browser(self, headless: bool = True) -> Page:
-        self.playwright = await async_playwright().start()
-        self.browser = await self.playwright.chromium.launch(
-            headless=headless,
-            args=[
-                '--disable-blink-features=AutomationControlled',
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-            ]
-        )
+        if not self.playwright:
+            self.playwright = await async_playwright().start()
+        
+        if not self.browser:
+            self.browser = await self.playwright.chromium.launch(
+                headless=headless,
+                args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--disable-gpu',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--single-process',
+                ]
+            )
         self.context = await self.browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
             viewport={"width": 1280, "height": 720},
