@@ -501,6 +501,12 @@ player.on('play', async () => {
     }
 });
 
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(e => console.error('SW Register failed', e));
+    });
+}
+
 setInterval(async () => {
     const cur = player.currentTime();
     const dur = player.duration();

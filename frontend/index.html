@@ -558,11 +558,34 @@ nav a.active { font-weight: 700; color: white; }
 
     searchIcon.onclick = (e) => {
         e.stopPropagation();
-        searchInput.classList.toggle('expanded');
-        if (searchInput.classList.contains('expanded')) searchInput.focus();
+        if (searchInput.classList.contains('expanded') && searchInput.value) {
+            triggerSearch();
+        } else {
+            searchInput.classList.toggle('expanded');
+            if (searchInput.classList.contains('expanded')) searchInput.focus();
+        }
     };
 
     searchInput.onclick = (e) => e.stopPropagation();
+
+    searchInput.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            triggerSearch();
+        }
+    };
+
+    function triggerSearch() {
+        currentQuery = searchInput.value;
+        if (!currentQuery) {
+            changeCategory(null);
+            return;
+        }
+        // Quando pesquisar, vamos nos comportar como se trocasse de categoria para resetar a grid e ocultar o Hero
+        resetGrid(currentQuery ? `Resultados para: ${currentQuery}` : "Catálogo");
+        
+        // Garante que o menu "Início" perca o destaque se houver uma busca ativa
+        document.querySelectorAll('#main-nav a, #mobile-nav a, #mobile-cat-pills button').forEach(a => a.classList.remove('active'));
+    }
 
     document.addEventListener('click', () => {
         if (!searchInput.value) searchInput.classList.remove('expanded');
@@ -570,17 +593,22 @@ nav a.active { font-weight: 700; color: white; }
 
     let searchTimeout;
     searchInput.oninput = (e) => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            currentQuery = e.target.value;
-            offset = 0;
-            hasMore = true;
-            document.getElementById('main-catalog').innerHTML = "";
-            loadMoreAnimes();
-        }, 500);
+        if (e.target.value.length > 2 || e.target.value === "") {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                triggerSearch();
+            }, 600);
+        }
     };
 
     document.addEventListener('DOMContentLoaded', () => { if (document.getElementById('main-catalog').children.length === 0) loadMoreAnimes(); });
 </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(e => console.error('SW Register failed', e));
+            });
+        }
+    </script>
 </body>
 </html>

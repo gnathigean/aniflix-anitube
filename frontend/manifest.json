@@ -4,10 +4,11 @@
   "short_name": "Aniflix",
   "start_url": "/?pwa=1",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "fullscreen"],
   "background_color": "#141414",
   "theme_color": "#E50914",
   "description": "Assista animes online com experiência premium e sem anúncios.",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "scope": "/",
   "dir": "ltr",
   "lang": "pt-BR",
@@ -40,11 +41,35 @@
   ],
   "screenshots": [
     {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
+      "src": "/icons/screenshot-mobile.png",
+      "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Aniflix Home"
+      "label": "Aniflix Mobile"
+    },
+    {
+      "src": "/icons/screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Aniflix Desktop"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Explorar Animes",
+      "url": "/",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ranking Diário",
+      "url": "/ranking",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Importador",
+      "url": "/importer",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
   "related_applications": [],
