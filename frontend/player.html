@@ -614,7 +614,12 @@ window.tryDirectPlay = function(urlB64) {
             
             // Delay de segurança para o navegador "esquecer" o pedido anterior (Evita AbortError)
             setTimeout(() => {
-                let type = url.toLowerCase().includes('.mp4') ? 'video/mp4' : 'application/x-mpegURL';
+                let type = 'application/x-mpegURL';
+                if(url.toLowerCase().includes('.mp4') || url.includes('googlevideo.com') || url.includes('redirector.gvt1.com')) {
+                    type = 'video/mp4';
+                }
+                
+                console.log("[Player] Setting source type:", type);
                 player.src({ src: url, type: type });
                 player.play().then(() => {
                     const overlay = document.getElementById('stream-loading');

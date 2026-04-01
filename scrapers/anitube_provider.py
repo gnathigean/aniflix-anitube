@@ -83,81 +83,49 @@ class AniTubeProvider(BaseProvider):
                 except: pass
 
     async def extract_episode(self, episode_url: str) -> Optional[dict]:
-        """Extração de stream com múltiplas estratégias (Rede -> Regex -> Iframe)."""
+        """Extração Multi-Source: Coleta todos os streams e prioriza os mais estáveis."""
         page = await self.init_browser()
-        self.extracted_url = None
-        self.extracted_headers = None
+        found_sources = [] # Lista de {"url": str, "headers": str}
         
         async def on_request(request):
             url = request.url.lower()
             if self.is_valid_stream(request.url):
-                if (".m3u8" in url or ".mp4" in url or "googlevideo.com" in url):
-                    if len(url) > 80:
-                        self.extracted_url = request.url
-                        self.extracted_headers = base64.urlsafe_b64encode(json.dumps(request.headers).encode()).decode()
+                # Prioridade Blogger / Google
+                priority = 10 if ("googlevideo.com" in url or "blogger.com" in url) else 5
+                
+                # Se for m3u8 de host duvidoso (ip-51), prioridade baixa
+                if "ip-51" in url: priority = 1
+
+                headers_b64 = base64.urlsafe_b64encode(json.dumps(dict(request.headers)).encode()).decode()
+                found_sources.append({"url": request.url, "headers": headers_b64, "priority": priority})
 
         page.on("request", on_request)
 
         try:
-            logger.info(f"🔍 Extraindo: {episode_url}")
-            await page.goto(episode_url, wait_until="domcontentloaded", timeout=30000)
+            logger.info(f"🔍 Extraindo (Turbo v5.2): {episode_url}")
+            await page.goto(episode_url, wait_until="domcontentloaded", timeout=25000)
             
-            # Estratégia 0: Extração segura via Regex LEVE / HTML Find
-            content = await page.content()
-            matches = re.findall(r'["\'](https?://[^"\']+\.(?:m3u8|mp4)[^"\']*)["\']', content)
-
-            import html
-            import json
-            
-            # Captura estado atual (Fidelity Headers)
-            current_cookies = await page.context.cookies()
-            cookie_str = "; ".join([f"{c['name']}={c['value']}" for c in current_cookies])
-            ua = await page.evaluate("navigator.userAgent")
-            fidelity_headers = {"referer": episode_url, "user-agent": ua, "cookie": cookie_str}
-            fidelity_b64 = base64.urlsafe_b64encode(json.dumps(fidelity_headers).encode()).decode()
-
-            for stream_url in matches:
-                stream_url = html.unescape(stream_url.replace('\\/', '/'))
-            # Estratégia Principal: Forçar Play em todas as camadas (Frames / Iframes)
-            logger.info("🎬 Tentando ativar o Player em Profundidade...")
-            
-            # Script insano que entra em todo frame (mesmo cross-origin às vezes o playwright permite via main frame)
-            # ou pede para o Playwright ir em cada frame conhecido e disparar clique/play.
-            
+            # Clique de ativação em frames
             try:
-                # 1. Clique duplo central para tentar matar popups transparentes do Anivideo
                 await page.mouse.click(640, 360); await asyncio.sleep(0.3)
-                await page.mouse.click(640, 360); await asyncio.sleep(0.5)
-                
-                # 2. Varredura e injeção de Play() em frames
                 for f in page.frames:
-                    try:
-                        # Se encontrarmos o iframe do Blogger/GoogleVideo, focamos nele e clicamos!
-                        if "blogger.com" in f.url or "anivideo" in f.url:
-                            logger.info(f"🎯 Focando no frame de vídeo: {f.url[:40]}...")
-                            # Tenta dar play via javascript no elemento video (se não houver bloqueio CORS severo)
-                            await f.evaluate("document.querySelectorAll('video').forEach(v => v.play())", timeout=2000)
-                    except:
-                        pass
-            except:
-                pass
+                    try: 
+                        if "anivideo" in f.url or "blogger" in f.url:
+                            await f.evaluate("document.querySelectorAll('video, .vjs-tech').forEach(v => v.play())")
+                    except: pass
+            except: pass
 
-            # 3. Espera interceptação de rede (CDN Final do Google ou Mpd)
-            # Reduzido para 10s para garantir resposta rápida no Render
-            for _ in range(10): 
-                if self.extracted_url:
-                    logger.info("✅ Encontrado via Rede (CDN Final)")
-                    return {"url_stream_original": self.extracted_url, "headers_b64": self.extracted_headers}
+            # Loop de espera (10s)
+            for _ in range(10):
+                if found_sources:
+                    # Ordena por prioridade (Maior primeiro)
+                    found_sources.sort(key=lambda x: x["priority"], reverse=True)
+                    best = found_sources[0]
+                    logger.info(f"✅ Encontrado {len(found_sources)} fontes. Melhor: {best['url'][:40]}")
+                    return {"url_stream_original": best["url"], "headers_b64": best["headers"]}
                 await asyncio.sleep(1)
-                
-                # Resgate instantâneo pela árvore de Frames montada
-                for f in page.frames:
-                    if f.url and "about:blank" not in f.url:
-                        if self.is_valid_stream(f.url) and "anitube.news" not in f.url:
-                            logger.info(f"✅ Encontrado Video Iframe nativo ({f.url[:50]}...)")
-                            return {"url_stream_original": f.url, "headers_b64": fidelity_b64}
 
-            raise Exception("Falha em todas as estratégias de extração profunda.")
+            raise Exception("Nenhum stream válido capturado em 10s.")
         except Exception as e:
             logger.warning(f"Erro na extração: {e}")
             return None
@@ -167,8 +135,7 @@ class AniTubeProvider(BaseProvider):
                     context = page.context
                     await page.close()
                     await context.close()
-                except:
-                    pass
+                except: pass
 
     async def find_episode_url(self, series_url: str, episode_number: int, external_page: Optional[Page] = None) -> Optional[str]:
         """Busca a URL de um episódio específico na página da série."""
