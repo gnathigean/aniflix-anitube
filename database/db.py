@@ -27,8 +27,10 @@ if not DATABASE_URL or DATABASE_URL.startswith("sqlite"):
     engine = create_async_engine(DATABASE_URL, **engine_args)
 else:
     # Ajuste para driver Psycopg v3 (Gold Standard para PgBouncer/Supabase)
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+    if "://" in DATABASE_URL:
+        # Pega a parte após o scheme (ex: user:pass@host/db) e força postgresql+psycopg
+        parts = DATABASE_URL.split("://", 1)
+        DATABASE_URL = f"postgresql+psycopg://{parts[1]}"
     
     # Psycopg v3 lida melhor com Poolers. Vamos remover cache manual de statements.
     is_pooler = "6543" in DATABASE_URL
