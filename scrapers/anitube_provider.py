@@ -115,17 +115,34 @@ class AniTubeProvider(BaseProvider):
                     except: pass
             except: pass
 
-            # Loop de espera (10s)
-            for _ in range(10):
+            # Loop de espera inteligente (15s total)
+            for i in range(15):
                 if found_sources:
                     # Ordena por prioridade (Maior primeiro)
                     found_sources.sort(key=lambda x: x["priority"], reverse=True)
                     best = found_sources[0]
                     logger.info(f"✅ Encontrado {len(found_sources)} fontes. Melhor: {best['url'][:40]}")
                     return {"url_stream_original": best["url"], "headers_b64": best["headers"]}
+                
+                # [SMART TABS] Se passaram 5s e nada foi achado, tentamos trocar de player no site original
+                if i == 5 or i == 10:
+                    logger.info(f"🔄 Nenhuma fonte na Opção {1 if i==5 else 2}. Tentando próxima aba...")
+                    try:
+                        # Busca botões que contenham "Opção", "Player" ou "ABA"
+                        tabs = await page.query_selector_all("a, li, button")
+                        target_text = f"Opção {2 if i==5 else 3}"
+                        for t in tabs:
+                            text = await t.inner_text()
+                            if target_text.lower() in text.lower():
+                                logger.info(f"🖱️ Clicando na aba: {text}")
+                                await t.click()
+                                await asyncio.sleep(2) # Espera carregar o novo iframe
+                                break
+                    except: pass
+
                 await asyncio.sleep(1)
 
-            raise Exception("Nenhum stream válido capturado em 10s.")
+            raise Exception("Nenhum stream válido capturado em 15s (tentadas 3 opções).")
         except Exception as e:
             logger.warning(f"Erro na extração: {e}")
             return None

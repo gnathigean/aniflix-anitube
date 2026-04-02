@@ -355,12 +355,13 @@ async def auditoria_integridade(status):
                         if ep_data:
                             await save_episode_to_db(ep_data, anime.id, temp1.id, f_num, idioma, ep_meta['url'])
                             status["sucesso"] += 1
-                            status["log_recente"].insert(0, f"✅ SUCESSO! Furo Ep {f_num} recuperado via Supabase.")
+                            status["log_recente"].insert(0, f"✅ SUCESSO! Furo Ep {f_num} recuperado.")
                         else:
-                            status["log_recente"].insert(0, f"❌ FALHA ao corrigir o Ep {f_num}. Fonte corrompida no servidor de origem.")
+                            status["log_recente"].insert(0, f"❌ FALHA: Ep {f_num} continuou indisponível após 3 tentativas de abas.")
                         
                         status["log_recente"] = status["log_recente"][:15]
                         save_json(STATUS_FILE, status)
+                        await asyncio.sleep(1) # Pausa estratégica para não sobrecarregar o scraper
 
 async def run_daemon():
     """Loop Infinito do Daemon v3.0."""
