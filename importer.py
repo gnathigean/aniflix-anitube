@@ -182,7 +182,7 @@ async def fase_scan(status):
                 base_url = f"{cat_url}?letra={letra}"
                 logger.info(f"Letra {letra.upper()}...")
                 try:
-                    await page.goto(base_url, wait_until="domcontentloaded", timeout=30000)
+                    await page.goto(base_url, wait_until="domcontentloaded", timeout=45000)
                     # Detecta paginação
                     max_p = await page.evaluate("""() => {
                         let max = 1;
@@ -195,23 +195,26 @@ async def fase_scan(status):
                     
                     for p in range(1, max_p + 1):
                         p_url = base_url if p == 1 else f"{cat_url}page/{p}/?letra={letra}"
-                        await page.goto(p_url, wait_until="domcontentloaded", timeout=30000)
-                        anchors = await page.query_selector_all('.aniItem a')
-                        for a in anchors:
-                            href = await a.get_attribute('href')
-                            title = await a.get_attribute('title') or await a.inner_text()
-                            if href and '/video/' in href:
-                                nome, _, _, _ = parse_titulo(title)
-                                if nome not in map_obras: 
-                                    map_obras[nome] = {"leg": [], "dub": [], "done": False, "done_episodes": []}
-                                if href not in map_obras[nome][idioma_tipo]:
-                                    map_obras[nome][idioma_tipo].append(href)
-                        
-                        status["obras_mapeadas"] = len(map_obras)
-                        save_json(STATUS_FILE, status)
-                        save_json(MAP_FILE, map_obras)
+                        try:
+                            await page.goto(p_url, wait_until="domcontentloaded", timeout=30000)
+                            anchors = await page.query_selector_all('.aniItem a')
+                            for a in anchors:
+                                href = await a.get_attribute('href')
+                                title = await a.get_attribute('title') or await a.inner_text()
+                                if href and '/video/' in href:
+                                    nome, _, _, _ = parse_titulo(title)
+                                    if nome not in map_obras: 
+                                        map_obras[nome] = {"leg": [], "dub": [], "done": False, "done_episodes": []}
+                                    if href not in map_obras[nome][idioma_tipo]:
+                                        map_obras[nome][idioma_tipo].append(href)
+                            
+                            status["obras_mapeadas"] = len(map_obras)
+                            save_json(STATUS_FILE, status)
+                            save_json(MAP_FILE, map_obras)
+                        except Exception as e:
+                            logger.warning(f"Erro na página {p} da letra {letra}: {e}")
                 except Exception as e:
-                    logger.warning(f"Erro na letra {letra}: {e}")
+                    logger.warning(f"Erro ao acessar letra {letra}: {e}")
         await browser.close()
 
 async def fase_importacao(status):

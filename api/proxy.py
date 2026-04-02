@@ -83,16 +83,23 @@ async def proxy_stream(
         if "range" in headers: del headers["range"]
         headers["range"] = range_header
 
+    # Headers de bypass extras para servidores OVH/ip-51
+    if "ip-51-79-82" in url or ".net" in url:
+        headers["sec-fetch-dest"] = "video"
+        headers["sec-fetch-mode"] = "cors"
+        headers["sec-fetch-site"] = "cross-site"
+        headers["origin"] = "https://www.anitube.news"
+
     # Cliente LOCAL para não multiplexar conexões no GoogleVideo
     local_client = httpx.AsyncClient(
-        timeout=httpx.Timeout(connect=12.0, read=60.0, write=20.0, pool=10.0),
+        timeout=httpx.Timeout(connect=25.0, read=90.0, write=30.0, pool=15.0),
         verify=False,
         http2=False,  # BUG H2 FASTAPI: Causa deadlock no stream de vídeo!
         follow_redirects=True
     )
 
     try:
-        print(f"[Proxy] 🔄 Streaming: {url[:60]}...")
+        print(f"[Proxy] 🔄 Streaming (Timeout 25s): {url[:60]}...")
         req = local_client.build_request("GET", url, headers=headers)
         response = await local_client.send(req, stream=True)
 

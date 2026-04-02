@@ -388,9 +388,11 @@ header .sep { margin: 0 10px; color: #444; }
 <script src="https://vjs.zencdn.net/8.5.2/video.min.js"></script>
 <script>
 const EP_ID = {{ episodio.id }};
+const ORIGINAL_URL = "{{ episodio.url_episodio_origem or '' }}";
 const START_PROGRESS = {{ progresso }};
 let viewed = false;
 let player;
+let retryCount = 0;
 
 // Inicializa player sem source — aguarda resolve-stream
 player = videojs('player', {
@@ -441,6 +443,13 @@ async function resolveAndPlay() {
         }
 
         if (!res.ok || data.error) {
+            console.error("[Player] Erro na resposta da API:", data.error);
+            // Fallback imediato se tivermos a URL original
+            if (ORIGINAL_URL) {
+                msgEl.textContent = 'Extração central falhou. Tentando modo Iframe (Bypass de Segurança)...';
+                setTimeout(() => tryIframe(ORIGINAL_URL), 3000);
+                return;
+            }
             throw new Error(data.error || `HTTP ${res.status}`);
         }
 
@@ -558,9 +567,15 @@ async function resolveAndPlay() {
                 }
                 try {
                     const reRes = await fetch(`/api/reextract-stream/${EP_ID}`, { method: 'POST' });
+                    
                     if(reRes.status === 503 || reRes.status === 502) {
-                         showBypassUI("Render Offline/Timeout", "O servidor Render demorou muito para processar o vídeo (Timeout). Recomenda-se usar o botão de Bypass abaixo.");
-                         return;
+                        if (ORIGINAL_URL) {
+                            msgEl.textContent = 'Servidor Render em manutenção/timeout. Abrindo Modo Iframe em 3s...';
+                            setTimeout(() => tryIframe(ORIGINAL_URL), 3000);
+                            return;
+                        }
+                        showBypassUI("Render Offline/Timeout", "O servidor Render demorou muito para processar o vídeo (Timeout). Use o botão de Bypass abaixo.");
+                        return;
                     }
                     
                     const reData = await reRes.json();

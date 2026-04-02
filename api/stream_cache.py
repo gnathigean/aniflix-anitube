@@ -16,6 +16,7 @@ na hora certa e expiram naturalmente do cache.
 import asyncio
 import time
 import logging
+import gc
 from typing import Optional
 
 logger = logging.getLogger("stream_cache")
@@ -111,11 +112,14 @@ async def resolve_stream(ep_id: int, url_origem: str) -> dict:
                 logger.info(f"[Cache] ✅ Stream salvo no cache para ep {ep_id}")
                 return entry
 
-            except asyncio.TimeoutError:
-                logger.error(f"[Cache] ⏱️ Timeout de 25s excedido para ep {ep_id}")
-                raise
-            except Exception as e:
-                logger.error(f"[Cache] ❌ Falha na extração para ep {ep_id}: {e}")
+            except (asyncio.TimeoutError, Exception) as e:
+                # Se falhou, resetamos o provider compartilhado para forçar um novo Playwright na próxima vez
+                global _shared_provider
+                logger.error(f"[Cache] ❌ Falha na extração para ep {ep_id} (Resetando Provider): {e}")
+                if _shared_provider:
+                    try: await _shared_provider.close_browser()
+                    except: pass
+                    _shared_provider = None
                 raise
             finally:
                 # Limpeza agressiva de memória para o Render Free (512MB)
