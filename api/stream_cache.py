@@ -82,13 +82,20 @@ async def resolve_stream(ep_id: int, url_origem: str) -> dict:
 
     # 2. Adquire lock do episódio (evita que o mesmo EP seja extraído por 2 reqs)
     lock = _get_lock(ep_id)
-    async with lock:
+    try:
+        # Aguarda no máximo 15s para pegar o lock (se alguém já está extraindo esse mesmo EP)
+        await asyncio.wait_for(lock.acquire(), timeout=15.0)
+    except asyncio.TimeoutError:
+        logger.error(f"[Cache] ⏱️ Timeout ao aguardar lock do ep {ep_id}")
+        raise HTTPException(status_code=503, detail="O sistema está ocupado processando este episódio. Tente novamente em segundos.")
+
+    try:
         # Double-check após o lock
         cached = get_cached(ep_id)
         if cached:
             return cached
 
-        logger.info(f"[Cache] 🔄 Aguardando vez para extrair ep {ep_id}...")
+        logger.info(f"[Cache] 🔄 Aguardando vez no semáforo para ep {ep_id}...")
         
         # 3. Adquire SEMÁFORO GLOBAL (evita que QUALQUER extração rode em paralelo, poupando RAM)
         async with _extraction_semaphore:
@@ -97,7 +104,6 @@ async def resolve_stream(ep_id: int, url_origem: str) -> dict:
             try:
                 provider = _get_shared_provider()
                 # Aumentamos o timeout na chamada do provider para lidar com lentidão do Render
-                # Mas limitamos a 25.0s porque o Render corta o processo em 30.0s com erro 503.
                 result = await asyncio.wait_for(provider.extract_episode(url_origem), timeout=25.0)
 
                 if not result or not result.get("url_stream_original"):
@@ -124,6 +130,11 @@ async def resolve_stream(ep_id: int, url_origem: str) -> dict:
             finally:
                 # Limpeza agressiva de memória para o Render Free (512MB)
                 gc.collect()
+    finally:
+        # Tenta liberar o lock apenas se estiver capturado
+        if lock.locked():
+            lock.release()
+
 
 
 async def resolve_origin_url(anime_titulo: str, ep_numero: int, idioma: str) -> Optional[dict]:
